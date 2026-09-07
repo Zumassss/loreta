@@ -137,3 +137,10 @@ export const IcCarrinho = (p: P) => (
     <circle cx="16.5" cy="18.5" r="1.4" />
   </svg>
 )
+
+export const IcPlanilha = (p: P) => (
+  <svg {...base} {...p}>
+    <rect x="4" y="3.5" width="16" height="17" rx="2.6" />
+    <path d="M4 9h16M4 14.5h16M10 9v11.5M15 9v11.5" />
+  </svg>
+)

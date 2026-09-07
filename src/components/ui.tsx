@@ -1,27 +1,187 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from 'react'
 import { IcCheck, IcMais, IcMenos, IcX } from './icons'
-import { num, paraNumero } from '../lib/format'
+import { brl, num, paraNumero } from '../lib/format'
+
+const semMovimento = () =>
+  typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches
+
+/* ---------- Bonequinha da marca (com as pálpebras que piscam) ---------- */
+
+export function Bonequinha({
+  className = '',
+  piscando = true,
+  style,
+}: {
+  className?: string
+  piscando?: boolean
+  style?: CSSProperties
+}) {
+  return (
+    <span className={`doll ${className}`} style={style} aria-hidden="true">
+      <img src="./loreta-doll.png" alt="" />
+      {piscando && (
+        <>
+          <i className="eyelid eyelid--l" />
+          <i className="eyelid eyelid--r" />
+        </>
+      )}
+    </span>
+  )
+}
 
 /* ---------- Splash de entrada ---------- */
 
+const CONFEITOS = [
+  { e: '♡', x: 8, d: 0.2, s: 1 },
+  { e: '✦', x: 22, d: 1.1, s: 0.8 },
+  { e: '♡', x: 38, d: 0.6, s: 0.7 },
+  { e: '✦', x: 55, d: 1.6, s: 1 },
+  { e: '♡', x: 72, d: 0.35, s: 0.9 },
+  { e: '✦', x: 86, d: 1.35, s: 0.75 },
+  { e: '♡', x: 94, d: 0.85, s: 0.65 },
+]
+
 export function Splash({ aoTerminar }: { aoTerminar: () => void }) {
   useEffect(() => {
-    const t = setTimeout(aoTerminar, 3250)
+    const t = setTimeout(aoTerminar, semMovimento() ? 600 : 4200)
     return () => clearTimeout(t)
   }, [aoTerminar])
 
   return (
     <div className="splash" onClick={aoTerminar}>
+      <div className="splash__confeitos" aria-hidden="true">
+        {CONFEITOS.map((c, i) => (
+          <span
+            key={i}
+            style={
+              {
+                left: `${c.x}%`,
+                animationDelay: `${c.d}s`,
+                fontSize: `${c.s * 20}px`,
+              } as CSSProperties
+            }
+          >
+            {c.e}
+          </span>
+        ))}
+      </div>
+
       <div className="splash__inner">
         <div className="doll-wrap">
-          <img src="./loreta-doll.png" alt="Bonequinha da Loreta" />
-          <span className="eyelid eyelid--l" />
-          <span className="eyelid eyelid--r" />
+          <Bonequinha />
         </div>
         <img className="splash__word" src="./loreta-wordmark.png" alt="Loreta" />
         <div className="splash__tag">Doceria Artesanal</div>
         <div className="splash__hello">Oi, Julia! Vamos ver o caixa? ♡</div>
       </div>
+
+      <div className="splash__cortina" aria-hidden="true" />
+    </div>
+  )
+}
+
+/* ---------- Número que sobe contando ---------- */
+
+export function useContador(valor: number, ms = 750) {
+  const [atual, setAtual] = useState(() => (semMovimento() ? valor : 0))
+  const de = useRef(semMovimento() ? valor : 0)
+
+  useEffect(() => {
+    if (semMovimento()) {
+      de.current = valor
+      setAtual(valor)
+      return
+    }
+    const inicio = de.current
+    if (Math.abs(inicio - valor) < 0.005) {
+      de.current = valor
+      setAtual(valor)
+      return
+    }
+    const t0 = performance.now()
+    let raf = 0
+    const passo = (t: number) => {
+      const p = Math.min((t - t0) / ms, 1)
+      const suave = 1 - Math.pow(1 - p, 3)
+      const v = inicio + (valor - inicio) * suave
+      de.current = v
+      setAtual(v)
+      if (p < 1) raf = requestAnimationFrame(passo)
+      else {
+        de.current = valor
+        setAtual(valor)
+      }
+    }
+    raf = requestAnimationFrame(passo)
+    return () => cancelAnimationFrame(raf)
+  }, [valor, ms])
+
+  return atual
+}
+
+export function Dinheiro({
+  valor,
+  className = 'money money--md',
+  style,
+}: {
+  valor: number
+  className?: string
+  style?: CSSProperties
+}) {
+  const v = useContador(valor)
+  return (
+    <span className={className} style={style}>
+      {brl(v)}
+    </span>
+  )
+}
+
+export function Numero({ valor, className }: { valor: number; className?: string }) {
+  const v = useContador(valor, 600)
+  return <span className={className}>{Math.round(v)}</span>
+}
+
+/* ---------- Chuvinha de confete ---------- */
+
+const CORES = ['var(--wine)', 'var(--blue-ink)', 'var(--peach)', 'var(--blue)']
+
+export function Confete({ semente }: { semente: number }) {
+  const pedacos = useMemo(
+    () =>
+      Array.from({ length: 22 }, (_, i) => ({
+        left: (i * 37 + semente * 13) % 100,
+        cor: CORES[i % CORES.length],
+        atraso: ((i * 7) % 10) / 20,
+        giro: ((i * 53) % 240) - 120,
+        dur: 1.1 + (((i * 17) % 7) / 10),
+        redondo: i % 3 === 0,
+      })),
+    [semente],
+  )
+  return (
+    <div className="confete" aria-hidden="true">
+      {pedacos.map((p, i) => (
+        <i
+          key={i}
+          style={
+            {
+              left: `${p.left}%`,
+              background: p.cor,
+              animationDelay: `${p.atraso}s`,
+              animationDuration: `${p.dur}s`,
+              borderRadius: p.redondo ? '50%' : '2px',
+              '--giro': `${p.giro}deg`,
+            } as CSSProperties
+          }
+        />
+      ))}
     </div>
   )
 }
@@ -62,7 +222,7 @@ export function Sheet({
             {subtitulo && <div className="muted">{subtitulo}</div>}
           </div>
           <button className="icon-btn" onClick={aoFechar} aria-label="Fechar">
-            <IcX className="" />
+            <IcX />
           </button>
         </div>
         <div className="sheet__body">{children}</div>
@@ -182,11 +342,11 @@ export function Contador({
   return (
     <div className="stepper">
       <button type="button" onClick={() => aoMudar(Math.max(min, valor - 1))} aria-label="Menos">
-        <IcMenos className="" />
+        <IcMenos />
       </button>
       <span>{valor}</span>
       <button type="button" onClick={() => aoMudar(valor + 1)} aria-label="Mais">
-        <IcMais className="" />
+        <IcMais />
       </button>
     </div>
   )
@@ -197,7 +357,7 @@ export function Contador({
 export function Toast({ texto }: { texto: string }) {
   return (
     <div className="toast">
-      <IcCheck className="" style={{ width: 18, height: 18 }} />
+      <IcCheck style={{ width: 18, height: 18 }} />
       {texto}
     </div>
   )
@@ -208,7 +368,7 @@ export function Toast({ texto }: { texto: string }) {
 export function Vazio({ titulo, texto }: { titulo: string; texto: string }) {
   return (
     <div className="empty">
-      <img src="./loreta-doll.png" alt="" />
+      <Bonequinha className="doll--vazio" />
       <h3 style={{ fontSize: 16 }}>{titulo}</h3>
       <p>{texto}</p>
     </div>

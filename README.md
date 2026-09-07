@@ -1,7 +1,7 @@
 # Loreta · Caixa
 
-Sistema de gestão financeira da **Loreta Doceria Artesanal** — feito pra Julia Pótico
-administrar tudo que entra e tudo que sai da confeitaria pelo celular.
+Sistema de gestão financeira da **Loreta Doceria Artesanal** — feito pra Julia Potkul
+administrar tudo que entra e tudo que sai da confeitaria — no celular e no computador.
 
 Identidade visual tirada do próprio cardápio da Loreta: listras azul-claro, vinho
 `#67130F`, creme e o pêssego dos destaques, com a bonequinha da marca piscando na
@@ -20,7 +20,8 @@ O app é 100% estático (React + Vite). A pasta `dist/` pode ser publicada em qu
 lugar — Vercel, Netlify, GitHub Pages.
 
 No celular, abra o site e use **"Adicionar à tela de início"**: ele abre em tela cheia,
-sem barra do navegador, igual a um aplicativo.
+sem barra do navegador, igual a um aplicativo. No computador (a partir de 900px de
+largura) o mesmo app vira um painel com menu lateral e conteúdo em duas colunas.
 
 ## O que o app faz
 
@@ -30,7 +31,17 @@ sem barra do navegador, igual a um aplicativo.
 | **Vendas** | Lançar o dia: ponto de venda, faturamento total e cada brownie vendido com o preço que saiu (o mesmo sabor pode entrar várias vezes, com preços diferentes) |
 | **Custos** | Ingredientes com preço de pacote → receita de cada sabor → custo por brownie e preço sugerido |
 | **Caixa** | Saldo real, os três potinhos, DRE do período, ponto de equilíbrio, gastos, retiradas da Julia e o guia rápido do dinheiro |
-| **Ajustes** | Pontos de venda, sabores, divisão do lucro, meta, custo fixo, margem alvo e backup |
+| **Ajustes** | Pontos de venda, sabores, divisão do lucro, meta, custo fixo, margem alvo, planilha do Excel e backup |
+
+## Planilha do Excel
+
+Em Ajustes → Planilha o app monta um `.xlsx` com a identidade da Loreta: capa com a
+logo e a bonequinha, cabeçalhos em vinho, listras azuis e valores em R$. São nove
+abas — Resumo, Vendas, Brownies vendidos, Pontos de venda, Sabores, Custo dos
+brownies, Ingredientes, Gastos e Retiradas da Julia.
+
+A biblioteca que gera o arquivo (`exceljs`) só é baixada no momento do clique, então
+ela não pesa no carregamento do app.
 
 ## O método financeiro
 
@@ -69,7 +80,8 @@ src/
     finance.ts   custos, CMV, DRE, divisão do lucro, ponto de equilíbrio
     store.tsx    estado global + localStorage
     format.ts    moeda, datas, parsing de valores digitados
-  components/    splash, sheet, campos, ícones
+    excel.ts     geração da planilha .xlsx da marca
+  components/    splash, bonequinha, sheet, campos, ícones
   screens/       Início, Vendas, Custos, Caixa, Ajustes
   styles/        sistema visual da marca
 public/          bonequinha, logo e ícones extraídos do cardápio

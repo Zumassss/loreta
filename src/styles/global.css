@@ -127,6 +127,19 @@ h4 {
   line-height: 1.15;
 }
 
+/* a bonequinha da marca é a base de vários enfeites — fica aqui em cima
+   pra que os modificadores definidos depois possam reposicionar ela */
+.doll {
+  position: relative;
+  display: inline-block;
+  line-height: 0;
+}
+
+.doll img {
+  width: 100%;
+  display: block;
+}
+
 /* ============================================================
    Shell do app — mobile-first, sem tremedeira
    ============================================================ */
@@ -206,9 +219,7 @@ h4 {
 }
 
 .topbar__doll {
-  width: 34px;
-  height: 34px;
-  object-fit: contain;
+  width: 36px;
   flex: 0 0 auto;
 }
 
@@ -449,9 +460,19 @@ h4 {
   position: absolute;
   right: 8px;
   bottom: 6px;
-  width: 76px;
-  opacity: 0.95;
+  width: 78px;
   pointer-events: none;
+  animation: doll-flutua 5.5s ease-in-out infinite;
+}
+
+@keyframes doll-flutua {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-1.5deg);
+  }
+  50% {
+    transform: translateY(-5px) rotate(1.5deg);
+  }
 }
 
 /* ============================================================
@@ -888,10 +909,11 @@ textarea.input:focus {
   color: var(--ink-soft);
 }
 
-.empty img {
-  width: 92px;
-  opacity: 0.5;
+.doll--vazio {
+  width: 96px;
+  opacity: 0.55;
   margin-bottom: 8px;
+  animation: doll-flutua 5s ease-in-out infinite;
 }
 
 .empty p {
@@ -954,6 +976,82 @@ input[type='range']::-moz-range-thumb {
   background: var(--cream);
   border: 3px solid var(--cor);
   box-shadow: 0 2px 7px rgba(103, 19, 15, 0.22);
+}
+
+/* painel de duas colunas — no celular é uma pilha só */
+.painel,
+.painel__col {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+/* dicas do painel */
+.dica {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  background: var(--cream);
+  border: 1.4px solid rgba(103, 19, 15, 0.16);
+  border-left-width: 5px;
+  border-radius: var(--r-md);
+  padding: 12px 14px;
+  box-shadow: var(--shadow-sm);
+}
+
+.dica p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink);
+}
+
+.dica__bolinha {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  margin-top: 5px;
+  flex: 0 0 auto;
+}
+
+.dica--ok {
+  border-left-color: var(--ok);
+}
+.dica--ok .dica__bolinha {
+  background: var(--ok);
+}
+
+.dica--atencao {
+  border-left-color: var(--peach);
+  background: var(--peach-pale);
+}
+.dica--atencao .dica__bolinha {
+  background: #c98b2e;
+}
+
+.dica--dica {
+  border-left-color: var(--blue-ink);
+}
+.dica--dica .dica__bolinha {
+  background: var(--blue-ink);
+}
+
+/* cartão da planilha */
+.planilha-card {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(160deg, var(--cream) 0%, var(--cream-2) 100%);
+}
+
+.planilha-card__doll {
+  position: absolute;
+  right: -10px;
+  top: 10px;
+  width: 92px;
+  opacity: 0.5;
+  pointer-events: none;
+  animation: doll-flutua 6s ease-in-out infinite;
 }
 
 /* linha nome + valor que não pode quebrar feio */
@@ -1023,75 +1121,19 @@ input[type='range']::-moz-range-thumb {
 }
 
 /* ============================================================
-   Splash
+   Bonequinha da marca — piscando
    ============================================================ */
 
-.splash {
-  position: fixed;
-  inset: 0;
-  z-index: 100;
-  display: grid;
-  place-items: center;
-  background: var(--stripes);
-  animation: splash-out 0.75s ease 2.55s both;
-}
-
-@keyframes splash-out {
-  to {
-    opacity: 0;
-    visibility: hidden;
-    transform: scale(1.06);
-  }
-}
-
-.splash__inner {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  padding: 0 24px;
-}
-
-.doll-wrap {
-  position: relative;
-  width: 210px;
-  animation: doll-in 0.85s cubic-bezier(0.34, 1.56, 0.64, 1) both,
-    doll-sway 2.6s ease-in-out 0.85s infinite;
-  transform-origin: 50% 88%;
-  filter: drop-shadow(0 10px 16px rgba(103, 19, 15, 0.14));
-}
-
-.doll-wrap img {
-  width: 100%;
-  display: block;
-}
-
-@keyframes doll-in {
-  from {
-    opacity: 0;
-    transform: translateY(26px) scale(0.72) rotate(-7deg);
-  }
-}
-
-@keyframes doll-sway {
-  0%,
-  100% {
-    transform: rotate(-2.6deg) translateY(0);
-  }
-  50% {
-    transform: rotate(2.6deg) translateY(-5px);
-  }
-}
-
-/* pálpebras posicionadas sobre os olhos da bonequinha */
+/* pálpebras posicionadas exatamente sobre os olhos do logo */
 .eyelid {
   position: absolute;
   background: #fffcf8;
   transform-origin: top center;
   transform: rotate(-9deg) scaleY(0);
-  border-bottom: 2.6px solid var(--wine);
+  border-bottom: 0.09em solid var(--wine);
   border-radius: 0 0 60% 60%;
-  animation: blink 4s ease-in-out 1.15s infinite;
+  animation: blink 2.2s ease-in-out 0.55s infinite;
+  will-change: transform;
 }
 
 .eyelid--l {
@@ -1108,28 +1150,166 @@ input[type='range']::-moz-range-thumb {
   height: 17%;
 }
 
+/* dois piscadinhas por ciclo */
 @keyframes blink {
   0%,
-  86%,
+  28% {
+    transform: rotate(-9deg) scaleY(0);
+  }
+  31%,
+  35% {
+    transform: rotate(-9deg) scaleY(1);
+  }
+  38%,
+  75% {
+    transform: rotate(-9deg) scaleY(0);
+  }
+  78%,
+  81% {
+    transform: rotate(-9deg) scaleY(1);
+  }
+  85%,
   100% {
     transform: rotate(-9deg) scaleY(0);
   }
-  90%,
-  93% {
-    transform: rotate(-9deg) scaleY(1);
+}
+
+/* nas versões pequenas o traço fica mais fino e o ritmo mais calmo */
+.topbar__doll .eyelid,
+.doll--vazio .eyelid {
+  border-bottom-width: 1.2px;
+  animation-duration: 6s;
+  animation-delay: 2s;
+}
+
+/* ============================================================
+   Splash
+   ============================================================ */
+
+.splash {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  background: var(--stripes);
+  overflow: hidden;
+  animation: splash-out 0.7s cubic-bezier(0.65, 0, 0.35, 1) 3.5s both;
+}
+
+@keyframes splash-out {
+  to {
+    opacity: 0;
+    visibility: hidden;
+    transform: scale(1.08);
+  }
+}
+
+/* cortina que varre a tela quando o app aparece */
+.splash__cortina {
+  position: absolute;
+  inset: 0;
+  background: var(--cream);
+  transform: translateY(101%);
+  animation: cortina 0.9s cubic-bezier(0.76, 0, 0.24, 1) 3.3s both;
+}
+
+@keyframes cortina {
+  60%,
+  100% {
+    transform: translateY(0);
+  }
+}
+
+.splash__confeitos {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.splash__confeitos span {
+  position: absolute;
+  bottom: -8%;
+  color: var(--wine);
+  opacity: 0;
+  animation: sobe 4.2s ease-in-out infinite;
+}
+
+@keyframes sobe {
+  0% {
+    opacity: 0;
+    transform: translateY(0) rotate(0deg) scale(0.7);
+  }
+  15% {
+    opacity: 0.55;
+  }
+  75% {
+    opacity: 0.35;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-92vh) rotate(28deg) scale(1.1);
+  }
+}
+
+.splash__inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 0 24px;
+  position: relative;
+  z-index: 2;
+}
+
+.doll-wrap {
+  width: 210px;
+  animation: doll-in 0.95s cubic-bezier(0.34, 1.56, 0.64, 1) both,
+    doll-sway 2.8s ease-in-out 0.95s infinite;
+  transform-origin: 50% 88%;
+  filter: drop-shadow(0 12px 18px rgba(103, 19, 15, 0.16));
+}
+
+@keyframes doll-in {
+  0% {
+    opacity: 0;
+    transform: translateY(34px) scale(0.6) rotate(-10deg);
+  }
+  60% {
+    opacity: 1;
+    transform: translateY(-6px) scale(1.05) rotate(3deg);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1) rotate(0deg);
+  }
+}
+
+@keyframes doll-sway {
+  0%,
+  100% {
+    transform: rotate(-2.8deg) translateY(0);
+  }
+  50% {
+    transform: rotate(2.8deg) translateY(-6px);
   }
 }
 
 .splash__word {
   width: min(74vw, 280px);
   margin-top: -6px;
-  animation: word-in 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.35s both;
+  clip-path: inset(0 100% 0 0);
+  animation: escreve 1.1s cubic-bezier(0.65, 0, 0.35, 1) 0.45s both;
 }
 
-@keyframes word-in {
+@keyframes escreve {
   from {
-    opacity: 0;
-    transform: translateY(16px) scale(0.94);
+    clip-path: inset(0 100% 0 0);
+    opacity: 0.2;
+  }
+  to {
+    clip-path: inset(0 -2% 0 0);
+    opacity: 1;
   }
 }
 
@@ -1142,7 +1322,7 @@ input[type='range']::-moz-range-thumb {
   font-weight: 700;
   margin-top: 2px;
   text-indent: 0.42em;
-  animation: fade-up 0.7s ease 0.85s both;
+  animation: fade-up 0.8s ease 1.25s both;
 }
 
 .splash__hello {
@@ -1154,19 +1334,34 @@ input[type='range']::-moz-range-thumb {
   border: 1.4px solid var(--wine);
   padding: 7px 18px;
   border-radius: var(--r-pill);
-  animation: fade-up 0.7s ease 1.25s both;
+  animation: fade-up 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 1.6s both,
+    pulsinho 2.4s ease-in-out 2.4s infinite;
   box-shadow: var(--shadow-sm);
+}
+
+@keyframes pulsinho {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.035);
+  }
 }
 
 @keyframes fade-up {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(12px);
   }
 }
 
-/* entrada das telas — fill "backwards" de propósito: com "both" o transform
-   final continua criando um bloco de contenção e prenderia o sheet/FAB */
+/* ============================================================
+   Entrada das telas e dos blocos
+   ============================================================ */
+
+/* fill "backwards" de propósito: com "both" o transform final continuaria
+   criando bloco de contenção e prenderia o sheet e o FAB */
 .enter {
   animation: enter 0.34s cubic-bezier(0.22, 1, 0.36, 1) backwards;
 }
@@ -1178,6 +1373,47 @@ input[type='range']::-moz-range-thumb {
   }
 }
 
+/* cada bloco da tela entra em cascata */
+.enter > .stack > * {
+  animation: bloco-entra 0.46s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+@keyframes bloco-entra {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.985);
+  }
+}
+
+.enter > .stack > *:nth-child(1) { animation-delay: 0.02s; }
+.enter > .stack > *:nth-child(2) { animation-delay: 0.06s; }
+.enter > .stack > *:nth-child(3) { animation-delay: 0.1s; }
+.enter > .stack > *:nth-child(4) { animation-delay: 0.14s; }
+.enter > .stack > *:nth-child(5) { animation-delay: 0.18s; }
+.enter > .stack > *:nth-child(6) { animation-delay: 0.22s; }
+.enter > .stack > *:nth-child(7) { animation-delay: 0.26s; }
+.enter > .stack > *:nth-child(8) { animation-delay: 0.3s; }
+.enter > .stack > *:nth-child(9) { animation-delay: 0.34s; }
+.enter > .stack > *:nth-child(n + 10) { animation-delay: 0.38s; }
+
+.list > * {
+  animation: item-entra 0.4s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+@keyframes item-entra {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+.list > *:nth-child(1) { animation-delay: 0.04s; }
+.list > *:nth-child(2) { animation-delay: 0.09s; }
+.list > *:nth-child(3) { animation-delay: 0.14s; }
+.list > *:nth-child(4) { animation-delay: 0.19s; }
+.list > *:nth-child(5) { animation-delay: 0.24s; }
+.list > *:nth-child(n + 6) { animation-delay: 0.28s; }
+
 .pop {
   animation: pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
 }
@@ -1186,6 +1422,87 @@ input[type='range']::-moz-range-thumb {
   from {
     opacity: 0;
     transform: scale(0.94);
+  }
+}
+
+/* toque nos blocos clicáveis */
+button.item,
+button.card {
+  transition: transform 0.16s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease,
+    border-color 0.2s ease;
+}
+
+button.item:active,
+button.card:active {
+  transform: scale(0.982);
+}
+
+/* brilho que passa devagar no bloco principal */
+.hero {
+  position: relative;
+}
+
+.hero::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -60%;
+  width: 40%;
+  height: 100%;
+  background: linear-gradient(
+    100deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.55) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  transform: skewX(-14deg);
+  animation: brilho 7s ease-in-out 1.2s infinite;
+  pointer-events: none;
+}
+
+@keyframes brilho {
+  0%,
+  70%,
+  100% {
+    left: -60%;
+  }
+  22%,
+  48% {
+    left: 130%;
+  }
+}
+
+/* confete de comemoração */
+.confete {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 55;
+  overflow: hidden;
+}
+
+.confete i {
+  position: absolute;
+  top: -6%;
+  width: 9px;
+  height: 12px;
+  opacity: 0;
+  animation-name: cai;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.7, 1);
+  animation-fill-mode: forwards;
+}
+
+@keyframes cai {
+  0% {
+    opacity: 0;
+    transform: translateY(0) rotate(0deg) scale(0.6);
+  }
+  12% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(78vh) rotate(var(--giro)) scale(1);
   }
 }
 
@@ -1203,7 +1520,7 @@ input[type='range']::-moz-range-thumb {
   font-weight: 700;
   font-size: 13.5px;
   box-shadow: var(--shadow-lg);
-  animation: toast-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  animation: toast-in 0.36s cubic-bezier(0.34, 1.56, 0.64, 1) both;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -1214,7 +1531,298 @@ input[type='range']::-moz-range-thumb {
 @keyframes toast-in {
   from {
     opacity: 0;
-    transform: translate(-50%, 16px) scale(0.9);
+    transform: translate(-50%, 18px) scale(0.88);
+  }
+}
+
+/* o menu lateral só existe no computador */
+.sidebar-brand,
+.sidebar-rodape {
+  display: none;
+}
+
+/* ============================================================
+   Computador — o app vira painel com menu lateral
+   ============================================================ */
+
+@media (min-width: 900px) {
+  body::before {
+    opacity: 0.42;
+  }
+
+  .shell {
+    max-width: 1240px;
+    width: calc(100% - 56px);
+    height: min(920px, calc(100dvh - 48px));
+    margin: 24px auto;
+    border-radius: 30px;
+    display: grid;
+    grid-template-columns: 246px minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+    box-shadow: 0 30px 80px rgba(103, 19, 15, 0.2);
+  }
+
+  .topbar {
+    grid-column: 2;
+    grid-row: 1;
+    height: 74px;
+    padding-inline: 32px;
+    border-top-right-radius: 30px;
+    background: var(--cream);
+  }
+
+  .topbar__brand {
+    display: none;
+  }
+
+  .topbar__page {
+    font-size: 22px;
+    letter-spacing: 0.08em;
+    opacity: 1;
+    order: -1;
+  }
+
+  .scroll {
+    grid-column: 2;
+    grid-row: 2;
+    padding: 26px 32px 40px;
+  }
+
+  /* menu vira barra lateral */
+  .tabbar {
+    position: relative;
+    grid-column: 1;
+    grid-row: 1 / span 2;
+    height: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+    padding: 22px 16px 20px;
+    border-top: none;
+    border-right: 1.6px solid rgba(103, 19, 15, 0.14);
+    border-radius: 30px 0 0 30px;
+    background: var(--cream);
+    box-shadow: none;
+    overflow: hidden;
+  }
+
+  .tabbar::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 8px;
+    background: var(--stripes-sm);
+  }
+
+  .tabbar__item {
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: var(--r-pill);
+    font-size: 14.5px;
+    transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+  }
+
+  .tabbar__item svg {
+    width: 21px;
+    height: 21px;
+  }
+
+  .tabbar__item::before {
+    display: none;
+  }
+
+  .tabbar__item:hover {
+    background: var(--blue-pale);
+  }
+
+  .tabbar__item.is-active {
+    background: var(--wine);
+    color: var(--cream);
+  }
+
+  .tabbar__item.is-active svg {
+    transform: none;
+  }
+
+  .sidebar-brand {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 14px 10px 20px;
+    margin-bottom: 8px;
+    border-bottom: 1.4px solid rgba(103, 19, 15, 0.12);
+  }
+
+  .sidebar-brand .doll {
+    width: 78px;
+  }
+
+  .sidebar-brand img.marca {
+    width: 132px;
+  }
+
+  .sidebar-brand span {
+    font-size: 8.5px;
+    letter-spacing: 0.34em;
+    text-transform: uppercase;
+    color: var(--wine-soft);
+    font-weight: 800;
+    text-indent: 0.34em;
+  }
+
+  .sidebar-rodape {
+    margin-top: auto;
+    text-align: center;
+    font-size: 11px;
+    color: var(--ink-soft);
+    line-height: 1.5;
+    padding-top: 14px;
+  }
+
+  /* conteúdo em duas colunas que se encaixam sozinhas */
+  .scroll > .enter > .stack {
+    display: block;
+    columns: 2;
+    column-gap: 16px;
+  }
+
+  .scroll > .enter > .stack > * {
+    break-inside: avoid;
+    margin-bottom: 16px;
+  }
+
+  .scroll > .enter > .stack > .hero,
+  .scroll > .enter > .stack > .section-title,
+  .scroll > .enter > .stack > .grid-2,
+  .scroll > .enter > .stack > .chips,
+  .scroll > .enter > .stack > .btn,
+  .scroll > .enter > .stack > .empty,
+  .scroll > .enter > .stack > p,
+  .scroll > .enter > .stack > .painel,
+  .scroll > .enter > .stack > .list {
+    column-span: all;
+  }
+
+  /* o painel manda nas próprias colunas */
+  .painel {
+    display: grid;
+    grid-template-columns: minmax(0, 1.04fr) minmax(0, 0.96fr);
+    gap: 20px;
+    align-items: start;
+  }
+
+  .painel__col {
+    gap: 16px;
+  }
+
+  .scroll .painel .list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* o bloco do caixa vira uma faixa larga com a bonequinha no canto */
+  .hero__body {
+    padding: 22px 26px 26px;
+  }
+
+  .scroll .list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .scroll > .enter > .stack > .grid-2 {
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  }
+
+  .hero__doll {
+    width: 104px;
+    right: 20px;
+  }
+
+  .money--xl {
+    font-size: 42px;
+  }
+
+  /* mouse: os blocos levantam de leve */
+  .card,
+  .item {
+    transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.22s ease;
+  }
+
+  button.item:hover,
+  button.card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+  }
+
+  .btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 20px rgba(103, 19, 15, 0.24);
+  }
+
+  .chip:hover {
+    border-color: var(--wine);
+  }
+
+  /* o sheet vira janela centralizada */
+  .sheet {
+    left: 50%;
+    right: auto;
+    bottom: auto;
+    top: 50%;
+    width: min(620px, 88%);
+    max-height: 84%;
+    border-radius: 28px;
+    border: var(--line);
+    transform: translate(-50%, -50%);
+    animation: janela-entra 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  @keyframes janela-entra {
+    from {
+      opacity: 0;
+      transform: translate(-50%, -46%) scale(0.96);
+    }
+  }
+
+  .sheet__grab {
+    display: none;
+  }
+
+  .sheet__head {
+    padding-top: 18px;
+  }
+
+  .fab {
+    right: 32px;
+    bottom: 28px;
+  }
+
+  .toast {
+    left: auto;
+    right: 32px;
+    bottom: 28px;
+    transform: none;
+    animation: toast-desk 0.36s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  }
+
+  @keyframes toast-desk {
+    from {
+      opacity: 0;
+      transform: translateY(18px) scale(0.9);
+    }
+  }
+}
+
+@media (min-width: 1180px) {
+  .scroll .list {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 

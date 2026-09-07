@@ -19,7 +19,7 @@ import {
   mapaDeCustos,
   unidadesVendidas,
 } from '../lib/finance'
-import { CampoDinheiro, Confirmar, Contador, Sheet, Vazio } from '../components/ui'
+import { CampoDinheiro, Confete, Confirmar, Contador, Dinheiro, Numero, Sheet, Vazio } from '../components/ui'
 import { IcLixo, IcMais, IcSacola } from '../components/icons'
 
 type Rascunho = {
@@ -48,6 +48,7 @@ export default function Vendas({ avisar }: { avisar: (t: string) => void }) {
   const [editando, setEditando] = useState<string | null>(null)
   const [detalhe, setDetalhe] = useState<Venda | null>(null)
   const [apagar, setApagar] = useState<string | null>(null)
+  const [festa, setFesta] = useState(0)
 
   const mes = mesAtual()
   const doMes = db.vendas.filter((v) => mesDe(v.data) === mes)
@@ -107,6 +108,11 @@ export default function Vendas({ avisar }: { avisar: (t: string) => void }) {
       return { ...d, vendas: [nova, ...d.vendas] }
     })
     avisar(editando ? 'Venda atualizada ♡' : 'Venda registrada ♡')
+    if (!editando) {
+      const n = Date.now()
+      setFesta(n)
+      setTimeout(() => setFesta((f) => (f === n ? 0 : f)), 2600)
+    }
     setForm(null)
     setEditando(null)
   }
@@ -121,11 +127,13 @@ export default function Vendas({ avisar }: { avisar: (t: string) => void }) {
           <div className="row row--between">
             <div>
               <div className="label">Faturamento de {soMes(mes)}</div>
-              <div className="money money--lg">{brl(faturamentoMes)}</div>
+              <Dinheiro valor={faturamentoMes} className="money money--lg" />
             </div>
             <div style={{ textAlign: 'right' }}>
               <div className="label">Brownies</div>
-              <div className="money money--md">{unidadesMes}</div>
+              <div className="money money--md">
+                <Numero valor={unidadesMes} />
+              </div>
             </div>
           </div>
           <div className="divider" />
@@ -186,6 +194,8 @@ export default function Vendas({ avisar }: { avisar: (t: string) => void }) {
           </div>
         )}
       </div>
+
+      {festa > 0 && <Confete semente={festa} />}
 
       <button className="fab" onClick={abrirNova}>
         <IcMais style={{ width: 20, height: 20 }} />

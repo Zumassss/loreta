@@ -12,6 +12,7 @@ import {
   seriePorMes,
 } from '../lib/finance'
 import { IcAlerta, IcEstrela, IcMais, IcSeta } from '../components/icons'
+import { Bonequinha, Dinheiro, Numero } from '../components/ui'
 
 export default function Inicio({ irPara }: { irPara: (a: Aba) => void }) {
   const { db } = useStore()
@@ -26,10 +27,73 @@ export default function Inicio({ irPara }: { irPara: (a: Aba) => void }) {
   const cx = calcCaixa(db.vendas, db.despesas, db.retiradas, custos, db.pontos, db.config)
   const divisaoMes = dividirLucro(resMes.lucro, db.config)
 
+  const semCustosTudo = db.sabores.every((s) => (custos.get(s.id)?.unitario ?? 0) <= 0)
   const serie = seriePorMes(db.vendas, 6)
   const maxSerie = Math.max(...serie.map((s) => s.total), 1)
   const ranking = porPonto(doMes, db.pontos, custos).slice(0, 3)
   const sabores = porSabor(doMes, db.sabores, custos).slice(0, 3)
+
+  const dicas = useMemo(() => {
+    const lista: { tom: 'ok' | 'atencao' | 'dica'; texto: string }[] = []
+    const rank = porPonto(db.vendas, db.pontos, custos)
+    if (rank.length > 1) {
+      const melhor = rank[0]
+      lista.push({
+        tom: 'ok',
+        texto: `${melhor.ponto.nome} é o ponto mais forte: ${brl(
+          melhor.faturamento / melhor.dias,
+        )} por dia de venda, em média.`,
+      })
+      const pior = rank[rank.length - 1]
+      if (pior.dias >= 2 && pior.faturamento / pior.dias < (melhor.faturamento / melhor.dias) * 0.4)
+        lista.push({
+          tom: 'atencao',
+          texto: `${pior.ponto.nome} rende ${brl(
+            pior.faturamento / pior.dias,
+          )} por dia. Vale conferir se compensa o deslocamento.`,
+        })
+    }
+    const sab = porSabor(db.vendas, db.sabores, custos)
+    if (sab.length > 1) {
+      const porUnidade = [...sab].sort((a, b) => b.lucro / b.unidades - a.lucro / a.unidades)
+      const campeao = porUnidade[0]
+      if (campeao.lucro > 0)
+        lista.push({
+          tom: 'ok',
+          texto: `${campeao.sabor.nome} deixa ${brl(
+            campeao.lucro / campeao.unidades,
+          )} de lucro por brownie — é o que mais compensa produzir.`,
+        })
+    }
+    if (resTudo.faturamento > 0 && resTudo.margemPct < 0.35 && !semCustosTudo)
+      lista.push({
+        tom: 'atencao',
+        texto: `A margem está em ${pct(
+          resTudo.margemPct,
+        )}. Pra doce artesanal o saudável é ficar acima de 45% — dá pra ajustar o preço ou o custo.`,
+      })
+    const fornada = Math.max(0, ...db.sabores.map((s) => custos.get(s.id)?.fornada ?? 0))
+    if (fornada > 0 && cx.saldo < fornada)
+      lista.push({
+        tom: 'atencao',
+        texto: `O caixa está abaixo do valor de uma fornada (${brl(
+          fornada,
+        )}). Segure as retiradas até repor esse colchão.`,
+      })
+    if (db.config.metaMensal <= 0)
+      lista.push({
+        tom: 'dica',
+        texto: 'Defina uma meta de faturamento em Ajustes — fica bem mais fácil saber se o mês está indo bem.',
+      })
+    if (cx.retiradas > cx.cotaJulia && cx.cotaJulia > 0)
+      lista.push({
+        tom: 'atencao',
+        texto: `A Julia já tirou ${brl(cx.retiradas)}, mais que a cota de ${brl(
+          cx.cotaJulia,
+        )}. O excedente saiu do dinheiro de trabalho da Loreta.`,
+      })
+    return lista.slice(0, 3)
+  }, [db, custos, resTudo, cx])
 
   const semVendas = db.vendas.length === 0
   const semCustos = db.sabores.every((s) => (custos.get(s.id)?.unitario ?? 0) <= 0)
@@ -41,9 +105,9 @@ export default function Inicio({ irPara }: { irPara: (a: Aba) => void }) {
       <section className="hero">
         <div className="hero__stripes" />
         <div className="hero__body" style={{ position: 'relative' }}>
-          <img className="hero__doll" src="./loreta-doll.png" alt="" />
+          <Bonequinha className="hero__doll" />
           <div className="label">Caixa da Loreta</div>
-          <div className={`money money--xl${cx.saldo < 0 ? ' neg' : ''}`}>{brl(cx.saldo)}</div>
+          <Dinheiro valor={cx.saldo} className={`money money--xl${cx.saldo < 0 ? ' neg' : ''}`} />
           <div className="muted" style={{ maxWidth: '68%' }}>
             {semVendas
               ? 'Assim que você lançar a primeira venda, o caixa aparece aqui.'
@@ -56,14 +120,17 @@ export default function Inicio({ irPara }: { irPara: (a: Aba) => void }) {
       <div className="grid-2">
         <div className="card">
           <div className="label">Faturou em {nomeMesCurto(mes)}</div>
-          <div className="money money--lg">{brl(resMes.faturamento)}</div>
-          <div className="muted">{resMes.unidades} brownies</div>
+          <Dinheiro valor={resMes.faturamento} className="money money--lg" />
+          <div className="muted">
+            <Numero valor={resMes.unidades} /> brownies
+          </div>
         </div>
         <div className="card">
           <div className="label">Lucro de {nomeMesCurto(mes)}</div>
-          <div className={`money money--lg${resMes.lucro < 0 ? ' neg' : ''}`}>
-            {brl(resMes.lucro)}
-          </div>
+          <Dinheiro
+            valor={resMes.lucro}
+            className={`money money--lg${resMes.lucro < 0 ? ' neg' : ''}`}
+          />
           <div className="muted">
             {resMes.faturamento > 0 ? `${pct(resMes.margemPct)} de margem` : 'sem vendas ainda'}
           </div>
@@ -93,7 +160,7 @@ export default function Inicio({ irPara }: { irPara: (a: Aba) => void }) {
         <div className="row row--between">
           <div>
             <div className="label">A Julia pode tirar</div>
-            <div className="money money--lg">{brl(cx.disponivelJulia)}</div>
+            <Dinheiro valor={cx.disponivelJulia} className="money money--lg" />
           </div>
           <button className="icon-btn" onClick={() => irPara('caixa')} aria-label="Ir para o caixa">
             <IcSeta style={{ width: 18, height: 18 }} />
@@ -232,6 +299,22 @@ export default function Inicio({ irPara }: { irPara: (a: Aba) => void }) {
         </>
       )}
 
+      {dicas.length > 0 && (
+        <>
+          <div className="section-title">
+            <h2>A Loreta reparou</h2>
+          </div>
+          <div className="list">
+            {dicas.map((d, i) => (
+              <div key={i} className={`dica dica--${d.tom}`}>
+                <span className="dica__bolinha" />
+                <p>{d.texto}</p>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
       {despesasMes.length > 0 && (
         <div className="card card--flat">
           <div className="row row--between">
@@ -249,7 +332,7 @@ export default function Inicio({ irPara }: { irPara: (a: Aba) => void }) {
       </button>
 
       <p className="muted" style={{ textAlign: 'center', padding: '4px 20px 0' }}>
-        Feito com carinho pra Julia Pótico ♡
+        Feito com carinho pra Julia Potkul ♡
       </p>
     </div>
   )

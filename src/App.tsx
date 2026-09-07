@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Splash, Toast } from './components/ui'
+import { Bonequinha, Splash, Toast } from './components/ui'
 import { IcBolo, IcCasa, IcCoracaoAjustes, IcCofre, IcSacola } from './components/icons'
 import Inicio from './screens/Inicio'
 import Vendas from './screens/Vendas'
@@ -49,7 +49,7 @@ export default function App() {
 
       <header className="topbar">
         <div className="topbar__brand">
-          <img className="topbar__doll" src="./loreta-doll.png" alt="" />
+          <Bonequinha className="topbar__doll" />
           <div className="topbar__title">
             <img src="./loreta-wordmark.png" alt="Loreta" />
             <span className="topbar__sub">Doceria Artesanal</span>
@@ -71,6 +71,11 @@ export default function App() {
       {toast && <Toast texto={toast} />}
 
       <nav className="tabbar">
+        <div className="sidebar-brand">
+          <Bonequinha />
+          <img className="marca" src="./loreta-wordmark.png" alt="Loreta" />
+          <span>Doceria Artesanal</span>
+        </div>
         {ABAS.map(({ id, nome, Icone }) => (
           <button
             key={id}
@@ -82,6 +87,11 @@ export default function App() {
             <span>{nome}</span>
           </button>
         ))}
+        <div className="sidebar-rodape">
+          Feito com carinho
+          <br />
+          pra Julia Potkul ♡
+        </div>
       </nav>
     </div>
   )
