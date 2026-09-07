@@ -1,0 +1,13 @@
+{
+  "name": "Loreta · Caixa",
+  "short_name": "Loreta",
+  "description": "Gestão financeira da Loreta Doceria Artesanal",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FFFCF8",
+  "theme_color": "#BFD7EA",
+  "icons": [
+    { "src": "/favicon-180.png", "sizes": "180x180", "type": "image/png" },
+    { "src": "/apple-touch-icon.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}
