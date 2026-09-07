@@ -188,6 +188,18 @@ export function Confete({ semente }: { semente: number }) {
 
 /* ---------- Sheet ---------- */
 
+/** quantos formulários estão abertos — a barra de baixo só volta no último */
+let abertos = 0
+
+function marcarAberto() {
+  abertos += 1
+  document.documentElement.dataset.sheet = 'aberto'
+  return () => {
+    abertos = Math.max(0, abertos - 1)
+    if (abertos === 0) delete document.documentElement.dataset.sheet
+  }
+}
+
 export function Sheet({
   aberto,
   titulo,
@@ -203,12 +215,40 @@ export function Sheet({
   children: ReactNode
   rodape?: ReactNode
 }) {
+  const corpo = useRef<HTMLDivElement>(null)
+
   useEffect(() => {
     if (!aberto) return
     const esc = (e: KeyboardEvent) => e.key === 'Escape' && aoFechar()
     window.addEventListener('keydown', esc)
-    return () => window.removeEventListener('keydown', esc)
+    const soltar = marcarAberto()
+    return () => {
+      window.removeEventListener('keydown', esc)
+      soltar()
+    }
   }, [aberto, aoFechar])
+
+  // com o teclado aberto, garante que o campo focado fique visível
+  useEffect(() => {
+    if (!aberto) return
+    const alvo = corpo.current
+    if (!alvo) return
+    const aoFocar = (e: FocusEvent) => {
+      const campo = e.target as HTMLElement
+      if (!campo?.closest?.('.sheet__body')) return
+      // rola só o corpo do formulário — scrollIntoView() rolaria também a
+      // casca do app e desalinharia a tela inteira
+      setTimeout(() => {
+        const c = campo.getBoundingClientRect()
+        const b = alvo.getBoundingClientRect()
+        const ajuste = c.top - b.top - (b.height - c.height) / 2
+        if (Math.abs(ajuste) > 8)
+          alvo.scrollTo({ top: alvo.scrollTop + ajuste, behavior: 'smooth' })
+      }, 320)
+    }
+    alvo.addEventListener('focusin', aoFocar)
+    return () => alvo.removeEventListener('focusin', aoFocar)
+  }, [aberto])
 
   if (!aberto) return null
   return (
@@ -225,7 +265,9 @@ export function Sheet({
             <IcX />
           </button>
         </div>
-        <div className="sheet__body">{children}</div>
+        <div className="sheet__body" ref={corpo}>
+          {children}
+        </div>
         {rodape && <div className="sheet__foot">{rodape}</div>}
       </div>
     </>

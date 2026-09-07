@@ -85,6 +85,13 @@ body {
   overscroll-behavior: none;
 }
 
+/* trava a página: no celular o navegador não pode rolar por baixo do app,
+   senão o rodapé do formulário escapa pra fora da tela quando o teclado sobe */
+body {
+  position: fixed;
+  inset: 0;
+}
+
 body {
   font-family: var(--font-body);
   color: var(--ink);
@@ -145,17 +152,31 @@ h4 {
    ============================================================ */
 
 .shell {
-  position: relative;
-  height: 100dvh;
-  max-height: 100dvh;
+  /* --app-h e --app-top vêm da visualViewport (lib/tela.ts): a casca fica
+     grudada na área que realmente aparece, mesmo com o teclado aberto */
+  position: fixed;
+  top: var(--app-top, 0px);
+  left: 0;
+  right: 0;
+  height: var(--app-h, 100dvh);
+  max-height: var(--app-h, 100dvh);
   width: 100%;
   max-width: 520px;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
   background: var(--paper);
+  /* "clip" em vez de "hidden": com hidden a casca continua sendo um container
+     rolável, e o navegador rolava ela sozinho ao focar um campo — era isso que
+     empurrava o rodapé do formulário pra trás da barra de baixo */
   overflow: hidden;
   box-shadow: 0 0 60px rgba(103, 19, 15, 0.12);
+}
+
+@supports (overflow: clip) {
+  .shell {
+    overflow: clip;
+  }
 }
 
 @supports not (height: 100dvh) {
@@ -176,10 +197,9 @@ h4 {
     z-index: 0;
   }
   .shell {
-    position: relative;
     z-index: 1;
-    height: min(880px, 100dvh);
-    margin: max(0px, calc((100dvh - 880px) / 2)) auto;
+    height: min(880px, var(--app-h, 100dvh));
+    margin: max(0px, calc((var(--app-h, 100dvh) - 880px) / 2)) auto;
     border-radius: 28px;
   }
 }
@@ -785,7 +805,7 @@ textarea.input:focus {
   right: 0;
   bottom: 0;
   z-index: 41;
-  max-height: 92%;
+  max-height: min(94%, var(--app-h, 100dvh));
   display: flex;
   flex-direction: column;
   background: var(--paper);
@@ -833,7 +853,7 @@ textarea.input:focus {
 }
 
 .sheet__body {
-  padding: 16px 18px calc(18px + env(safe-area-inset-bottom));
+  padding: 16px 18px calc(28px + env(safe-area-inset-bottom));
   overflow-y: auto;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
@@ -851,6 +871,36 @@ textarea.input:focus {
   background: var(--cream);
   display: flex;
   gap: 10px;
+}
+
+/* enquanto um formulário está aberto a barra de baixo sai de cena:
+   sobra mais espaço e não tem como ela cobrir o botão de salvar */
+html[data-sheet='aberto'] .tabbar {
+  transform: translateY(100%);
+  pointer-events: none;
+  transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.tabbar {
+  transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* teclado aberto: o formulário fica compacto pra sobrar tela pro conteúdo */
+html[data-teclado='aberto'] .sheet__head {
+  padding-bottom: 8px;
+}
+
+html[data-teclado='aberto'] .sheet__head .muted {
+  display: none;
+}
+
+html[data-teclado='aberto'] .sheet__grab {
+  margin: 6px auto 2px;
+}
+
+html[data-teclado='aberto'] .sheet__foot {
+  padding-top: 8px;
+  padding-bottom: max(8px, env(safe-area-inset-bottom));
 }
 
 /* ============================================================
@@ -1553,7 +1603,7 @@ button.card:active {
   .shell {
     max-width: 1240px;
     width: calc(100% - 56px);
-    height: min(920px, calc(100dvh - 48px));
+    height: min(920px, calc(var(--app-h, 100dvh) - 48px));
     margin: 24px auto;
     border-radius: 30px;
     display: grid;

@@ -6,6 +6,7 @@ import Vendas from './screens/Vendas'
 import Custos from './screens/Custos'
 import Caixa from './screens/Caixa'
 import Ajustes from './screens/Ajustes'
+import { useAlturaDaTela } from './lib/tela'
 
 export type Aba = 'inicio' | 'vendas' | 'custos' | 'caixa' | 'ajustes'
 
@@ -26,6 +27,7 @@ const TITULOS: Record<Aba, string> = {
 }
 
 export default function App() {
+  useAlturaDaTela()
   const [splash, setSplash] = useState(() => !sessionStorage.getItem('loreta.visto'))
   const [aba, setAba] = useState<Aba>('inicio')
   const [toast, setToast] = useState<string | null>(null)
