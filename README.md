@@ -83,6 +83,13 @@ JSON a qualquer momento.
 
 ## Ligar o banco (uma vez, ~10 minutos)
 
+> **Já ligou o Supabase pelo painel da Vercel?** Então os passos 1 e 5 já estão
+> feitos: a Vercel criou o projeto e colocou as variáveis sozinha. O build aceita
+> os nomes dela (`SUPABASE_URL`, `SUPABASE_ANON_KEY`, `NEXT_PUBLIC_…`), não precisa
+> renomear nada. Faltam os passos 2 e 3 — as tabelas e a conta —, que a integração
+> não tem como criar. Para abrir o painel do Supabase: Vercel → *Storage* → o
+> Supabase que você criou → *Open in Supabase*.
+
 1. **Criar o projeto** — em [supabase.com](https://supabase.com), *New project*.
    Escolha a região `South America (São Paulo)` e guarde a senha do banco.
 2. **Criar as tabelas** — no menu *SQL Editor*, cole todo o conteúdo de
@@ -100,6 +107,11 @@ JSON a qualquer momento.
    - `VITE_SUPABASE_ANON_KEY` = a chave anon public
 
    Depois faça um *Redeploy* (as variáveis entram no build).
+
+O log do deploy diz em qual estado o site subiu: `[Loreta] banco ligado em …` ou
+`[Loreta] sem banco…`. Se a chave `service_role` for colocada por engano no lugar
+da `anon`, o build para com erro em vez de publicar — essa chave passa por cima de
+toda a segurança do banco e não pode ir pro navegador.
 
 Pronto: o site passa a pedir a senha e todo mundo que entrar vê o mesmo caixa.
 Na primeira vez, abra Ajustes → Sincronização e toque em **Enviar deste aparelho**

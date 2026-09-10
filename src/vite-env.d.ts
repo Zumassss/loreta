@@ -1,11 +1,6 @@
 /// <reference types="vite/client" />
 
-interface ImportMetaEnv {
-  readonly VITE_SUPABASE_URL?: string
-  readonly VITE_SUPABASE_ANON_KEY?: string
-  readonly VITE_LORETA_EMAIL?: string
-}
-
-interface ImportMeta {
-  readonly env: ImportMetaEnv
-}
+/* injetados pelo vite.config.ts (aceita os nomes do Vite e os da Vercel) */
+declare const __LORETA_URL__: string
+declare const __LORETA_CHAVE__: string
+declare const __LORETA_EMAIL__: string
