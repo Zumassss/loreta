@@ -2,3 +2,6 @@ node_modules
 dist
 .DS_Store
 *.local
+
+# cache incremental do TypeScript — não deve ir pro repositório
+*.tsbuildinfo
