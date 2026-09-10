@@ -121,6 +121,14 @@ A chave `anon` pode aparecer no código do site sem problema — ela sozinha nã
 nada, porque as regras do banco (RLS) exigem login. O que não pode vazar é a senha
 da Loreta e a chave `service_role` (essa nunca entra no site).
 
+### Primeiro acesso com o banco recém-criado
+
+Quando o banco ainda está vazio, o aparelho que entra primeiro **semeia** ele com
+os pontos de venda, os sabores e as configurações — em vez de ser apagado por ele.
+Os cadastros iniciais usam ids derivados do nome (`ponto-ufes`, `sabor-snickers`),
+então se os dois celulares fizerem isso ao mesmo tempo as linhas são idênticas e
+nada duplica.
+
 ### Como a sincronização funciona por dentro
 
 A tela continua trabalhando com um único objeto `DB`. O `store` compara o antes e o

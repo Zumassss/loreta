@@ -9,7 +9,6 @@ import {
   type ReactNode,
 } from "react";
 import type { DB } from "./types";
-import { id } from "./format";
 import { emailDaCasa, supabase, temNuvem } from "./supabase";
 import {
   aplicar,
@@ -24,6 +23,17 @@ import {
 
 const CHAVE = "loreta.caixa.v1";
 
+/** id fixo a partir do nome: se dois celulares semearem o banco vazio ao mesmo
+    tempo, os dois geram exatamente as mesmas linhas e nada duplica */
+const apelido = (prefixo: string, nome: string) =>
+  `${prefixo}-` +
+  nome
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+
 const semente = (): DB => ({
   versao: 1,
   pontos: [
@@ -34,7 +44,12 @@ const semente = (): DB => ({
     "Clínica Fono",
     "Amigas Laura",
     "Vendas Marcelo",
-  ].map((nome) => ({ id: id(), nome, ativo: true, taxaPct: 0 })),
+  ].map((nome) => ({
+    id: apelido("ponto", nome),
+    nome,
+    ativo: true,
+    taxaPct: 0,
+  })),
   sabores: [
     "Ninho com Nutella",
     "Snickers",
@@ -42,7 +57,7 @@ const semente = (): DB => ({
     "Tradicional",
     "Doce de Leite",
   ].map((nome) => ({
-    id: id(),
+    id: apelido("sabor", nome),
     nome,
     ativo: true,
     rendimento: 0,
@@ -231,13 +246,25 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }
     try {
       const remoto = await baixarTudo(dbRef.current);
-      setBancoVazio(estaVazio(remoto));
+
+      // Banco recém-criado: quem chega primeiro semeia. Sem isso o app trocaria
+      // os dados do aparelho por um banco vazio e a Julia abriria o site sem
+      // nenhum ponto de venda e nenhum sabor pra escolher.
+      if (estaVazio(remoto)) {
+        setBancoVazio(true);
+        enfileirar(operacoesDeTudo(dbRef.current));
+        await escoar();
+        if (fila.current.length === 0) setBancoVazio(false);
+        return;
+      }
+
+      setBancoVazio(false);
       aplicarLocal(remoto);
       setEstado("sincronizado");
     } catch {
       setEstado("offline");
     }
-  }, [aplicarLocal, escoar]);
+  }, [aplicarLocal, enfileirar, escoar]);
 
   useEffect(() => {
     const sb = supabase;
