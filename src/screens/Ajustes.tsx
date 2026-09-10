@@ -19,13 +19,26 @@ import {
 import { baixarPlanilha, gerarPlanilha } from "../lib/excel";
 
 export default function Ajustes({ avisar }: { avisar: (t: string) => void }) {
-  const { db, set, reset, exportar, importar } = useStore();
+  const {
+    db,
+    set,
+    reset,
+    exportar,
+    importar,
+    temNuvem,
+    estado,
+    pendentes,
+    enviarEsteAparelho,
+    sair,
+    bancoVazio,
+  } = useStore();
   const [ponto, setPonto] = useState<Ponto | null>(null);
   const [sabor, setSabor] = useState<Sabor | null>(null);
   const [confirmarReset, setConfirmarReset] = useState(false);
   const [importando, setImportando] = useState(false);
   const [texto, setTexto] = useState("");
   const [gerando, setGerando] = useState(false);
+  const [subindo, setSubindo] = useState(false);
 
   const somaSplit =
     db.config.splitJulia + db.config.splitGiro + db.config.splitReserva;
@@ -305,6 +318,102 @@ export default function Ajustes({ avisar }: { avisar: (t: string) => void }) {
               <IcMais style={{ width: 18, height: 18 }} />
               Novo sabor
             </button>
+
+            {/* ---------- sincronização ---------- */}
+            <div className="section-title">
+              <h2>Sincronização</h2>
+            </div>
+            <section className="card">
+              {temNuvem ? (
+                <>
+                  <div className="row row--between">
+                    <span className="linha-nome">
+                      <i
+                        className="ponto-cor"
+                        style={{
+                          background:
+                            estado === "sincronizado"
+                              ? "var(--ok)"
+                              : estado === "offline"
+                                ? "var(--alert)"
+                                : "var(--peach)",
+                        }}
+                      />
+                      {estado === "sincronizado"
+                        ? "Tudo salvo no banco"
+                        : estado === "offline"
+                          ? "Sem conexão agora"
+                          : estado === "enviando"
+                            ? "Enviando…"
+                            : "Carregando…"}
+                    </span>
+                    {pendentes > 0 && (
+                      <span className="tag tag--peach">
+                        {pendentes} na fila
+                      </span>
+                    )}
+                  </div>
+                  <p className="muted" style={{ margin: "8px 0 0" }}>
+                    Os lançamentos ficam no banco da Loreta: qualquer aparelho
+                    que entrar com a senha vê o mesmo saldo e o mesmo histórico,
+                    na hora. Sem internet o app continua funcionando e envia
+                    sozinho quando a conexão voltar.
+                  </p>
+                  <div className="divider" />
+                  <div className="grid-2">
+                    <button
+                      className="btn btn--soft btn--tight"
+                      disabled={subindo}
+                      onClick={async () => {
+                        setSubindo(true);
+                        const deu = await enviarEsteAparelho();
+                        setSubindo(false);
+                        avisar(
+                          deu
+                            ? "Dados enviados ♡"
+                            : "Não deu agora — tente de novo",
+                        );
+                      }}
+                    >
+                      {subindo ? "Enviando…" : "Enviar deste aparelho"}
+                    </button>
+                    <button
+                      className="btn btn--soft btn--tight"
+                      onClick={() => {
+                        void sair();
+                        avisar("Você saiu");
+                      }}
+                    >
+                      Sair da conta
+                    </button>
+                  </div>
+                  {bancoVazio && (
+                    <p className="muted" style={{ margin: "10px 0 0" }}>
+                      O banco ainda está vazio. Toque em{" "}
+                      <b>Enviar deste aparelho</b> pra mandar pra lá o que você
+                      já lançou aqui.
+                    </p>
+                  )}
+                </>
+              ) : (
+                <>
+                  <div className="row row--between">
+                    <span className="linha-nome">
+                      <i
+                        className="ponto-cor"
+                        style={{ background: "var(--peach)" }}
+                      />
+                      Só neste aparelho
+                    </span>
+                  </div>
+                  <p className="muted" style={{ margin: "8px 0 0" }}>
+                    O banco ainda não foi ligado, então os lançamentos ficam
+                    guardados só neste celular. Assim que as chaves do Supabase
+                    entrarem no site, todo mundo passa a ver o mesmo caixa.
+                  </p>
+                </>
+              )}
+            </section>
 
             {/* ---------- planilha ---------- */}
             <div className="section-title">

@@ -351,6 +351,124 @@ h4 {
   z-index: -1;
 }
 
+/* selo de estado da sincronização */
+.topbar__lado {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.selo {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  padding: 4px 9px;
+  border-radius: var(--r-pill);
+  white-space: nowrap;
+}
+
+.selo--espera {
+  background: var(--peach-pale);
+  color: #8a5a1c;
+}
+
+.selo--offline {
+  background: var(--alert-bg);
+  color: var(--alert);
+}
+
+/* ============================================================
+   Entrada (senha da casa)
+   ============================================================ */
+
+.entrada {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: var(--stripes);
+  overflow: auto;
+}
+
+.entrada__cartao {
+  width: 100%;
+  max-width: 380px;
+  background: var(--cream);
+  border: var(--line);
+  border-radius: var(--r-xl);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  animation: entrada-sobe 0.5s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+@keyframes entrada-sobe {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.97);
+  }
+}
+
+.entrada__stripes {
+  height: 22px;
+  background: var(--stripes-sm);
+  border-bottom: var(--line);
+}
+
+.entrada__corpo {
+  padding: 4px 22px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.entrada__doll {
+  width: 116px;
+  margin-top: -6px;
+  animation: doll-flutua 5s ease-in-out infinite;
+}
+
+.entrada__marca {
+  width: 160px;
+  margin-top: -6px;
+}
+
+.entrada__tag {
+  font-family: var(--font-display);
+  font-size: 9px;
+  letter-spacing: 0.36em;
+  text-transform: uppercase;
+  color: var(--wine-soft);
+  font-weight: 700;
+  text-indent: 0.36em;
+  margin-top: -4px;
+}
+
+.entrada__texto {
+  text-align: center;
+  margin: 6px 0 4px;
+  line-height: 1.55;
+}
+
+.entrada__cartao .field,
+.entrada__cartao .btn {
+  width: 100%;
+}
+
+.entrada__erro {
+  width: 100%;
+  background: var(--alert-bg);
+  color: var(--alert);
+  border-radius: var(--r-md);
+  padding: 9px 12px;
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+  animation: pop 0.26s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+}
+
 /* ============================================================
    Blocos
    ============================================================ */

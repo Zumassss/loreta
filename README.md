@@ -67,9 +67,58 @@ Preço sugerido de venda: `custo ÷ (1 − margem alvo)`, com a margem alvo padr
 
 ## Onde os dados ficam
 
-Tudo é salvo no **próprio aparelho** (localStorage do navegador) — não vai pra
-servidor nenhum. Em Ajustes → Seus dados dá pra baixar um backup em JSON e restaurar
-depois, inclusive em outro celular.
+O app funciona de dois jeitos, dependendo de ter ou não o banco ligado:
+
+| | Sem banco | Com banco (Supabase) |
+| --- | --- | --- |
+| Onde salva | só no aparelho de quem usou | no banco da Loreta |
+| Outro celular | vê números diferentes | vê o mesmo saldo e o mesmo histórico |
+| Ao vivo | — | uma venda lançada aparece no outro aparelho na hora |
+| Sem internet | funciona | funciona; o lançamento fica na fila e sobe sozinho depois |
+| Entrada | direto | senha da Loreta |
+
+Nos dois casos o aparelho guarda uma cópia local, então o app abre instantâneo e
+continua funcionando sem sinal. Em Ajustes → Seus dados dá pra baixar um backup em
+JSON a qualquer momento.
+
+## Ligar o banco (uma vez, ~10 minutos)
+
+1. **Criar o projeto** — em [supabase.com](https://supabase.com), *New project*.
+   Escolha a região `South America (São Paulo)` e guarde a senha do banco.
+2. **Criar as tabelas** — no menu *SQL Editor*, cole todo o conteúdo de
+   [`supabase/schema.sql`](supabase/schema.sql) e clique em **Run**. Isso cria as
+   tabelas, tranca o acesso (só quem entrar com a senha lê ou escreve) e liga o
+   tempo real.
+3. **Criar a conta da Loreta** — em *Authentication → Users → Add user*:
+   - e-mail: `caixa@loreta.app`
+   - senha: a senha que vocês vão usar pra entrar no site
+   - marque **Auto Confirm User**
+4. **Pegar as chaves** — em *Project Settings → API*, copie a **Project URL** e a
+   chave **anon public**.
+5. **Colocar as chaves no site** — na Vercel, *Settings → Environment Variables*:
+   - `VITE_SUPABASE_URL` = a Project URL
+   - `VITE_SUPABASE_ANON_KEY` = a chave anon public
+
+   Depois faça um *Redeploy* (as variáveis entram no build).
+
+Pronto: o site passa a pedir a senha e todo mundo que entrar vê o mesmo caixa.
+Na primeira vez, abra Ajustes → Sincronização e toque em **Enviar deste aparelho**
+pra mandar pro banco o que você já tinha lançado.
+
+A chave `anon` pode aparecer no código do site sem problema — ela sozinha não abre
+nada, porque as regras do banco (RLS) exigem login. O que não pode vazar é a senha
+da Loreta e a chave `service_role` (essa nunca entra no site).
+
+### Como a sincronização funciona por dentro
+
+A tela continua trabalhando com um único objeto `DB`. O `store` compara o antes e o
+depois desse objeto a cada mudança e manda pro banco **só a linha que mudou** —
+venda por venda, gasto por gasto. Não existe "salvar o arquivo inteiro", então dois
+celulares podem lançar ao mesmo tempo sem um apagar o trabalho do outro.
+
+O que não conseguiu subir fica numa fila no aparelho (`loreta.fila.v1`) e é reenviado
+quando a internet volta. Um canal de tempo real avisa os outros aparelhos, que
+recarregam sozinhos.
 
 ## Estrutura
 
@@ -78,11 +127,16 @@ src/
   lib/
     types.ts     modelo de dados
     finance.ts   custos, CMV, DRE, divisão do lucro, ponto de equilíbrio
-    store.tsx    estado global + localStorage
+    store.tsx    estado global, cópia local e sincronização
     format.ts    moeda, datas, parsing de valores digitados
     excel.ts     geração da planilha .xlsx da marca
+    supabase.ts  cliente do banco (opcional)
+    nuvem.ts     o que mudou -> o que mandar pro banco, e a fila de envio
+    tela.ts      mede a área visível de verdade (teclado, barras do navegador)
   components/    splash, bonequinha, sheet, campos, ícones
   screens/       Início, Vendas, Custos, Caixa, Ajustes
   styles/        sistema visual da marca
 public/          bonequinha, logo e ícones extraídos do cardápio
+supabase/
+  schema.sql     tabelas, permissões e tempo real
 ```
