@@ -1893,6 +1893,14 @@ button.card:active {
     grid-template-columns: minmax(0, 1fr);
   }
 
+  /* dentro de um formulário a lista NUNCA vira grade: em duas ou três colunas
+     o campo de preço fica com uns poucos pixels e some o que a pessoa digita */
+  .scroll .sheet .list {
+    display: flex;
+    flex-direction: column;
+    grid-template-columns: none;
+  }
+
   /* o bloco do caixa vira uma faixa larga com a bonequinha no canto */
   .hero__body {
     padding: 22px 26px 26px;
