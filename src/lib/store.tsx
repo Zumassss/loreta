@@ -23,6 +23,11 @@ import {
 
 const CHAVE = "loreta.caixa.v1";
 
+/** quantas vezes tentar ler o banco antes de dar o app como offline */
+const TENTATIVAS = 3;
+
+const espera = (ms: number) => new Promise((ok) => setTimeout(ok, ms));
+
 /** id fixo a partir do nome: se dois celulares semearem o banco vazio ao mesmo
     tempo, os dois geram exatamente as mesmas linhas e nada duplica */
 const apelido = (prefixo: string, nome: string) =>
@@ -244,25 +249,36 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       await escoar();
       if (fila.current.length) return;
     }
-    try {
-      const remoto = await baixarTudo(dbRef.current);
+    // As sete tabelas são buscadas em paralelo. Logo depois do login uma delas
+    // pode sair antes do token novo e voltar 401 — e aí a resposta boa das
+    // outras seis ia junto pro lixo, o app se declarava sem internet e a tela
+    // ficava zerada. Tenta de novo antes de desistir.
+    for (let tentativa = 1; tentativa <= TENTATIVAS; tentativa++) {
+      try {
+        const remoto = await baixarTudo(dbRef.current);
 
-      // Banco recém-criado: quem chega primeiro semeia. Sem isso o app trocaria
-      // os dados do aparelho por um banco vazio e a Julia abriria o site sem
-      // nenhum ponto de venda e nenhum sabor pra escolher.
-      if (estaVazio(remoto)) {
-        setBancoVazio(true);
-        enfileirar(operacoesDeTudo(dbRef.current));
-        await escoar();
-        if (fila.current.length === 0) setBancoVazio(false);
+        // Banco recém-criado: quem chega primeiro semeia. Sem isso o app trocaria
+        // os dados do aparelho por um banco vazio e a Julia abriria o site sem
+        // nenhum ponto de venda e nenhum sabor pra escolher.
+        if (estaVazio(remoto)) {
+          setBancoVazio(true);
+          enfileirar(operacoesDeTudo(dbRef.current));
+          await escoar();
+          if (fila.current.length === 0) setBancoVazio(false);
+          return;
+        }
+
+        setBancoVazio(false);
+        aplicarLocal(remoto);
+        setEstado("sincronizado");
         return;
+      } catch {
+        if (tentativa === TENTATIVAS) {
+          setEstado("offline");
+          return;
+        }
+        await espera(300 * tentativa);
       }
-
-      setBancoVazio(false);
-      aplicarLocal(remoto);
-      setEstado("sincronizado");
-    } catch {
-      setEstado("offline");
     }
   }, [aplicarLocal, enfileirar, escoar]);
 
