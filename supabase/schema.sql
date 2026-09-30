@@ -78,8 +78,14 @@ create index if not exists despesas_data_idx  on public.despesas (data);
 create index if not exists retiradas_data_idx on public.retiradas (data);
 
 -- ============================================================
--- Quem pode mexer: só quem entrou com a senha da Loreta.
--- Visitante sem login não lê e não escreve nada.
+-- Quem pode mexer: qualquer um que abra o site da Loreta (papel "anon",
+-- a chave pública que vai no navegador) e também quem entre com senha,
+-- caso a senha seja religada com LORETA_SENHA=1 na Vercel.
+--
+-- Isso é de propósito: a Julia pediu pra entrar sem senha. Quem tiver o
+-- link consegue ver e alterar o caixa. Pra fechar de novo, troque
+-- "to anon, authenticated" por "to authenticated" aqui embaixo, rode
+-- este arquivo e publique com LORETA_SENHA=1.
 -- ============================================================
 
 do $$
@@ -93,10 +99,10 @@ begin
     execute format('drop policy if exists "loreta_leitura" on public.%I', t);
     execute format('drop policy if exists "loreta_escrita" on public.%I', t);
     execute format(
-      'create policy "loreta_leitura" on public.%I for select to authenticated using (true)', t
+      'create policy "loreta_leitura" on public.%I for select to anon, authenticated using (true)', t
     );
     execute format(
-      'create policy "loreta_escrita" on public.%I for all to authenticated using (true) with check (true)', t
+      'create policy "loreta_escrita" on public.%I for all to anon, authenticated using (true) with check (true)', t
     );
   end loop;
 end $$;

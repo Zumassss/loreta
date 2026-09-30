@@ -5,6 +5,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 declare const __LORETA_URL__: string;
 declare const __LORETA_CHAVE__: string;
 declare const __LORETA_EMAIL__: string;
+declare const __LORETA_EXIGE_SENHA__: boolean;
 
 const url = __LORETA_URL__;
 const chave = __LORETA_CHAVE__;
@@ -14,6 +15,9 @@ export const temNuvem = Boolean(url && chave);
 
 /** e-mail da conta única da Loreta; a senha é que é o segredo */
 export const emailDaCasa = __LORETA_EMAIL__ || "caixa@loreta.app";
+
+/** o site pede senha pra entrar? desligado por padrão (LORETA_SENHA=1 religa) */
+export const exigeSenha = __LORETA_EXIGE_SENHA__ === true;
 
 export const supabase: SupabaseClient | null = temNuvem
   ? createClient(url, chave, {

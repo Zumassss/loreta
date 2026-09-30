@@ -62,6 +62,12 @@ export default defineConfig(({ mode }) => {
     primeiro(ambiente, ["VITE_LORETA_EMAIL", "LORETA_EMAIL"]) ||
     "caixa@loreta.app";
 
+  // Por padrão o site abre direto, sem pedir senha. Para voltar a exigir senha,
+  // crie a variável LORETA_SENHA=1 na Vercel e publique de novo.
+  const exigeSenha = ["1", "true", "sim"].includes(
+    primeiro(ambiente, ["VITE_LORETA_SENHA", "LORETA_SENHA"]).toLowerCase(),
+  );
+
   if (chave && ehServiceRole(chave)) {
     throw new Error(
       "[Loreta] a chave informada é a service_role, que abre o banco inteiro e não pode " +
@@ -72,7 +78,11 @@ export default defineConfig(({ mode }) => {
   // aparece no log do deploy pra ficar fácil conferir se as chaves chegaram
   console.log(
     url && chave
-      ? `[Loreta] banco ligado em ${url.replace(/^https?:\/\//, "")} (conta ${email})`
+      ? `[Loreta] banco ligado em ${url.replace(/^https?:\/\//, "")} · ${
+          exigeSenha
+            ? `entrada com senha (${email})`
+            : "entrada liberada, sem senha"
+        }`
       : "[Loreta] sem banco: o app vai guardar os dados só no aparelho de quem usar",
   );
 
@@ -83,6 +93,7 @@ export default defineConfig(({ mode }) => {
       __LORETA_URL__: JSON.stringify(url),
       __LORETA_CHAVE__: JSON.stringify(chave),
       __LORETA_EMAIL__: JSON.stringify(email),
+      __LORETA_EXIGE_SENHA__: JSON.stringify(exigeSenha),
     },
   };
 });

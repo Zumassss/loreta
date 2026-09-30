@@ -26,6 +26,7 @@ export default function Ajustes({ avisar }: { avisar: (t: string) => void }) {
     exportar,
     importar,
     temNuvem,
+    exigeSenha,
     estado,
     pendentes,
     enviarEsteAparelho,
@@ -354,15 +355,18 @@ export default function Ajustes({ avisar }: { avisar: (t: string) => void }) {
                     )}
                   </div>
                   <p className="muted" style={{ margin: "8px 0 0" }}>
-                    Os lançamentos ficam no banco da Loreta: qualquer aparelho
-                    que entrar com a senha vê o mesmo saldo e o mesmo histórico,
-                    na hora. Sem internet o app continua funcionando e envia
-                    sozinho quando a conexão voltar.
+                    Os lançamentos ficam no banco da Loreta:{" "}
+                    {exigeSenha
+                      ? "qualquer aparelho que entrar com a senha"
+                      : "qualquer aparelho que abrir o site"}{" "}
+                    vê o mesmo saldo e o mesmo histórico, na hora. Sem internet
+                    o app continua funcionando e envia sozinho quando a conexão
+                    voltar.
                   </p>
                   <div className="divider" />
-                  <div className="grid-2">
+                  <div className={exigeSenha ? "grid-2" : ""}>
                     <button
-                      className="btn btn--soft btn--tight"
+                      className="btn btn--soft btn--tight btn--block"
                       disabled={subindo}
                       onClick={async () => {
                         setSubindo(true);
@@ -377,15 +381,17 @@ export default function Ajustes({ avisar }: { avisar: (t: string) => void }) {
                     >
                       {subindo ? "Enviando…" : "Enviar deste aparelho"}
                     </button>
-                    <button
-                      className="btn btn--soft btn--tight"
-                      onClick={() => {
-                        void sair();
-                        avisar("Você saiu");
-                      }}
-                    >
-                      Sair da conta
-                    </button>
+                    {exigeSenha && (
+                      <button
+                        className="btn btn--soft btn--tight"
+                        onClick={() => {
+                          void sair();
+                          avisar("Você saiu");
+                        }}
+                      >
+                        Sair da conta
+                      </button>
+                    )}
                   </div>
                   {bancoVazio && (
                     <p className="muted" style={{ margin: "10px 0 0" }}>

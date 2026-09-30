@@ -40,7 +40,8 @@ const TITULOS: Record<Aba, string> = {
 
 export default function App() {
   useAlturaDaTela();
-  const { temNuvem, entrou, sessaoConhecida, estado, pendentes } = useStore();
+  const { temNuvem, exigeSenha, entrou, sessaoConhecida, estado, pendentes } =
+    useStore();
   const [splash, setSplash] = useState(
     () => !sessionStorage.getItem("loreta.visto"),
   );
@@ -61,10 +62,10 @@ export default function App() {
   }, [toast]);
 
   // ainda descobrindo se já tem sessão: segura a tela pra não piscar o login
-  if (temNuvem && !sessaoConhecida)
+  if (temNuvem && exigeSenha && !sessaoConhecida)
     return <div className="entrada" aria-busy="true" />;
 
-  if (temNuvem && !entrou)
+  if (temNuvem && exigeSenha && !entrou)
     return (
       <>
         {splash && <Splash aoTerminar={fecharSplash} />}

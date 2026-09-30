@@ -4,3 +4,4 @@
 declare const __LORETA_URL__: string
 declare const __LORETA_CHAVE__: string
 declare const __LORETA_EMAIL__: string
+declare const __LORETA_EXIGE_SENHA__: boolean

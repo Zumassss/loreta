@@ -9,7 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import type { DB } from "./types";
-import { emailDaCasa, supabase, temNuvem } from "./supabase";
+import { emailDaCasa, exigeSenha, supabase, temNuvem } from "./supabase";
 import {
   aplicar,
   baixarTudo,
@@ -129,6 +129,7 @@ interface Ctx {
   exportar: () => string;
   /* nuvem */
   temNuvem: boolean;
+  exigeSenha: boolean;
   entrou: boolean;
   sessaoConhecida: boolean;
   estado: Estado;
@@ -145,7 +146,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [db, setDbEstado] = useState<DB>(carregar);
   const dbRef = useRef<DB>(db);
   const [entrou, setEntrou] = useState(false);
-  const [sessaoConhecida, setSessaoConhecida] = useState(!temNuvem);
+  const [sessaoConhecida, setSessaoConhecida] = useState(
+    !temNuvem || !exigeSenha,
+  );
   const [estado, setEstado] = useState<Estado>(
     temNuvem ? "carregando" : "local",
   );
@@ -282,9 +285,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }
   }, [aplicarLocal, enfileirar, escoar]);
 
+  // sem senha o app sincroniza assim que abre; com senha, só depois de entrar
+  const liberado = temNuvem && (!exigeSenha || entrou);
+
   useEffect(() => {
     const sb = supabase;
-    if (!temNuvem || !entrou || !sb) return;
+    if (!liberado || !sb) return;
     let vivo = true;
     let debounce: ReturnType<typeof setTimeout> | undefined;
 
@@ -313,7 +319,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       window.removeEventListener("online", aoVoltar);
       void sb.removeChannel(canal);
     };
-  }, [entrou, baixar, escoar]);
+  }, [liberado, baixar, escoar]);
 
   /* ---------- ações ---------- */
 
@@ -366,6 +372,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       importar,
       exportar,
       temNuvem,
+      exigeSenha,
       entrou,
       sessaoConhecida,
       estado,
