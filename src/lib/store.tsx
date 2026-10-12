@@ -9,7 +9,15 @@ import {
   type ReactNode,
 } from "react";
 import type { DB } from "./types";
-import { emailDaCasa, exigeSenha, supabase, temNuvem } from "./supabase";
+import {
+  ErroBanco,
+  chamarBanco,
+  esquecerSenha,
+  exigeSenha,
+  guardarSenha,
+  senhaGuardada,
+  temNuvem,
+} from "./banco";
 import {
   aplicar,
   baixarTudo,
@@ -25,6 +33,9 @@ const CHAVE = "loreta.caixa.v1";
 
 /** quantas vezes tentar ler o banco antes de dar o app como offline */
 const TENTATIVAS = 3;
+
+/** de quanto em quanto tempo o app confere se outro aparelho lançou algo */
+const INTERVALO_ABERTO = 15000;
 
 const espera = (ms: number) => new Promise((ok) => setTimeout(ok, ms));
 
@@ -145,10 +156,9 @@ const StoreCtx = createContext<Ctx | null>(null);
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [db, setDbEstado] = useState<DB>(carregar);
   const dbRef = useRef<DB>(db);
-  const [entrou, setEntrou] = useState(false);
-  const [sessaoConhecida, setSessaoConhecida] = useState(
-    !temNuvem || !exigeSenha,
-  );
+  // com senha da casa, "entrou" = este aparelho já guardou a senha certa
+  const [entrou, setEntrou] = useState(() => Boolean(senhaGuardada()));
+  const sessaoConhecida = true;
   const [estado, setEstado] = useState<Estado>(
     temNuvem ? "carregando" : "local",
   );
@@ -210,40 +220,26 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   /* ---------- sessão ---------- */
 
-  useEffect(() => {
-    if (!supabase) return;
-    let vivo = true;
-    supabase.auth.getSession().then(({ data }) => {
-      if (!vivo) return;
-      setEntrou(Boolean(data.session));
-      setSessaoConhecida(true);
-    });
-    const { data } = supabase.auth.onAuthStateChange((_e, sessao) => {
-      setEntrou(Boolean(sessao));
-      setSessaoConhecida(true);
-    });
-    return () => {
-      vivo = false;
-      data.subscription.unsubscribe();
-    };
-  }, []);
-
   const entrar = useCallback(async (senha: string) => {
-    if (!supabase) return "Este site ainda não está ligado no banco.";
-    const { error } = await supabase.auth.signInWithPassword({
-      email: emailDaCasa,
-      password: senha,
-    });
-    if (error) return "Senha errada — tente de novo.";
+    if (!temNuvem) return "Este site ainda não está ligado no banco.";
+    try {
+      await chamarBanco("GET", undefined, senha);
+    } catch (e) {
+      if (e instanceof ErroBanco && e.status === 401)
+        return "Senha errada — tente de novo.";
+      return "Sem conexão com o banco agora — tente de novo.";
+    }
+    guardarSenha(senha);
+    setEntrou(true);
     return null;
   }, []);
 
   const sair = useCallback(async () => {
-    await supabase?.auth.signOut();
+    esquecerSenha();
     setEntrou(false);
   }, []);
 
-  /* ---------- carregar do banco + tempo real ---------- */
+  /* ---------- carregar do banco + conferência periódica ---------- */
 
   const baixar = useCallback(async () => {
     if (!temNuvem) return;
@@ -275,7 +271,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         aplicarLocal(remoto);
         setEstado("sincronizado");
         return;
-      } catch {
+      } catch (e) {
+        // senha trocada na Vercel: volta pra tela de entrada
+        if (e instanceof ErroBanco && e.status === 401) {
+          esquecerSenha();
+          setEntrou(false);
+          setEstado("offline");
+          return;
+        }
         if (tentativa === TENTATIVAS) {
           setEstado("offline");
           return;
@@ -289,35 +292,25 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const liberado = temNuvem && (!exigeSenha || entrou);
 
   useEffect(() => {
-    const sb = supabase;
-    if (!liberado || !sb) return;
-    let vivo = true;
-    let debounce: ReturnType<typeof setTimeout> | undefined;
+    if (!liberado) return;
 
     setEstado("carregando");
     void baixar();
 
-    const canal = sb
-      .channel("loreta-caixa")
-      .on("postgres_changes", { event: "*", schema: "public" }, () => {
-        if (!vivo) return;
-        clearTimeout(debounce);
-        debounce = setTimeout(() => void baixar(), 400);
-      })
-      .subscribe();
-
+    // Sem tempo real: com a aba aberta, confere o banco a cada 15 s, e na hora
+    // em que o celular volta pro app. Antes de receber, manda o que está na fila.
+    const conferir = () => {
+      if (document.visibilityState === "visible") void baixar();
+    };
+    const relogio = setInterval(conferir, INTERVALO_ABERTO);
     const aoVoltar = () => void escoar().then(() => baixar());
     window.addEventListener("online", aoVoltar);
-    const relogio = setInterval(() => {
-      if (fila.current.length) void escoar();
-    }, 20000);
+    document.addEventListener("visibilitychange", conferir);
 
     return () => {
-      vivo = false;
-      clearTimeout(debounce);
       clearInterval(relogio);
       window.removeEventListener("online", aoVoltar);
-      void sb.removeChannel(canal);
+      document.removeEventListener("visibilitychange", conferir);
     };
   }, [liberado, baixar, escoar]);
 

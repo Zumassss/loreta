@@ -1,7 +1,5 @@
 /// <reference types="vite/client" />
 
-/* injetados pelo vite.config.ts (aceita os nomes do Vite e os da Vercel) */
-declare const __LORETA_URL__: string
-declare const __LORETA_CHAVE__: string
-declare const __LORETA_EMAIL__: string
+/* injetados pelo vite.config.ts na hora do build */
+declare const __LORETA_NUVEM__: boolean
 declare const __LORETA_EXIGE_SENHA__: boolean

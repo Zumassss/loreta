@@ -69,65 +69,48 @@ Preço sugerido de venda: `custo ÷ (1 − margem alvo)`, com a margem alvo padr
 
 O app funciona de dois jeitos, dependendo de ter ou não o banco ligado:
 
-| | Sem banco | Com banco (Supabase) |
+| | Sem banco | Com banco (Neon) |
 | --- | --- | --- |
 | Onde salva | só no aparelho de quem usou | no banco da Loreta |
 | Outro celular | vê números diferentes | vê o mesmo saldo e o mesmo histórico |
-| Ao vivo | — | uma venda lançada aparece no outro aparelho na hora |
+| Atualização | — | o app confere o banco a cada 15 s e ao voltar pra tela |
 | Sem internet | funciona | funciona; o lançamento fica na fila e sobe sozinho depois |
-| Entrada | direto | senha da Loreta |
+| Entrada | direto | direto, ou com a senha da casa (opcional) |
 
 Nos dois casos o aparelho guarda uma cópia local, então o app abre instantâneo e
 continua funcionando sem sinal. Em Ajustes → Seus dados dá pra baixar um backup em
 JSON a qualquer momento.
 
-## Ligar o banco (uma vez, ~10 minutos)
+## O banco (Neon, ligado pela Vercel)
 
-> **Já ligou o Supabase pelo painel da Vercel?** Então os passos 1 e 5 já estão
-> feitos: a Vercel criou o projeto e colocou as variáveis sozinha. O build aceita
-> os nomes dela (`SUPABASE_URL`, `SUPABASE_ANON_KEY`, `NEXT_PUBLIC_…`), não precisa
-> renomear nada. Faltam os passos 2 e 3 — as tabelas e a conta —, que a integração
-> não tem como criar. Para abrir o painel do Supabase: Vercel → *Storage* → o
-> Supabase que você criou → *Open in Supabase*.
+O banco é um Postgres no [Neon](https://neon.tech), ligado pelo painel da Vercel
+(*Storage → Neon*). A integração cria sozinha a variável
+`bancoloreta_DATABASE_URL` no projeto — não precisa copiar senha nenhuma.
 
-1. **Criar o projeto** — em [supabase.com](https://supabase.com), *New project*.
-   Escolha a região `South America (São Paulo)` e guarde a senha do banco.
-2. **Criar as tabelas** — no menu *SQL Editor*, cole todo o conteúdo de
-   [`supabase/schema.sql`](supabase/schema.sql) e clique em **Run**. Isso cria as
-   tabelas, tranca o acesso (só quem entrar com a senha lê ou escreve) e liga o
-   tempo real.
-3. **Criar a conta da Loreta** — em *Authentication → Users → Add user*:
-   - e-mail: `caixa@loreta.app`
-   - senha: a senha que vocês vão usar pra entrar no site
-   - marque **Auto Confirm User**
-4. **Pegar as chaves** — em *Project Settings → API*, copie a **Project URL** e a
-   chave **anon public**.
-5. **Colocar as chaves no site** — na Vercel, *Settings → Environment Variables*:
-   - `VITE_SUPABASE_URL` = a Project URL
-   - `VITE_SUPABASE_ANON_KEY` = a chave anon public
+Quem fala com o banco é só a função [`api/loreta.ts`](api/loreta.ts), que roda no
+servidor da Vercel:
 
-   Depois faça um *Redeploy* (as variáveis entram no build).
+- `GET /api/loreta` devolve todas as tabelas;
+- `POST /api/loreta` grava (upsert) ou apaga linhas de uma tabela.
 
-O log do deploy diz em qual estado o site subiu: `[Loreta] banco ligado em …` ou
-`[Loreta] sem banco…`. Se a chave `service_role` for colocada por engano no lugar
-da `anon`, o build para com erro em vez de publicar — essa chave passa por cima de
-toda a segurança do banco e não pode ir pro navegador.
+A URL do banco nunca vai pro navegador: no build entra só um "sim/não" (tem
+banco? tem senha?). A função aceita apenas as sete tabelas do caixa e as colunas
+conhecidas de cada uma.
 
-Pronto: o site passa a pedir a senha e todo mundo que entrar vê o mesmo caixa.
-Na primeira vez, abra Ajustes → Sincronização e toque em **Enviar deste aparelho**
-pra mandar pro banco o que você já tinha lançado.
+Banco novo, do zero: abra o *SQL Editor* do Neon e rode
+[`banco/schema.sql`](banco/schema.sql). Na primeira vez que alguém abrir o site,
+o aparelho semeia o banco vazio com os pontos, os sabores e as configurações.
 
-A chave `anon` pode aparecer no código do site sem problema — ela sozinha não abre
-nada, porque as regras do banco (RLS) exigem login. O que não pode vazar é a senha
-da Loreta e a chave `service_role` (essa nunca entra no site).
+O log do deploy diz em qual estado o site subiu: `[Loreta] banco ligado (Neon) …`
+ou `[Loreta] sem banco…`.
 
-### Primeiro acesso com o banco recém-criado
+### Senha da casa (opcional)
 
-Quando o banco ainda está vazio, o aparelho que entra primeiro **semeia** ele com
-os pontos de venda, os sabores e as configurações — em vez de ser apagado por ele.
-Os cadastros iniciais usam ids derivados do nome (`ponto-ufes`, `sabor-snickers`),
-então se os dois celulares fizerem isso ao mesmo tempo as linhas são idênticas e
-nada duplica.
+Por padrão o site abre direto, sem senha (a Julia pediu assim). Quem tiver o
+link vê e altera o caixa. Pra fechar: na Vercel, *Settings → Environment
+Variables*, crie `LORETA_SENHA_DA_CASA` com a senha que vocês vão usar e faça
+*Redeploy*. O site passa a pedir a senha uma vez em cada aparelho; a função
+recusa qualquer chamada sem ela.
 
 ### Como a sincronização funciona por dentro
 
@@ -137,8 +120,9 @@ venda por venda, gasto por gasto. Não existe "salvar o arquivo inteiro", então
 celulares podem lançar ao mesmo tempo sem um apagar o trabalho do outro.
 
 O que não conseguiu subir fica numa fila no aparelho (`loreta.fila.v1`) e é reenviado
-quando a internet volta. Um canal de tempo real avisa os outros aparelhos, que
-recarregam sozinhos.
+quando a internet volta. Com a tela aberta, o app confere o banco a cada 15
+segundos e na hora em que o celular volta pro app, e antes de receber sempre manda
+o que estava na fila.
 
 ## Estrutura
 
@@ -150,13 +134,15 @@ src/
     store.tsx    estado global, cópia local e sincronização
     format.ts    moeda, datas, parsing de valores digitados
     excel.ts     geração da planilha .xlsx da marca
-    supabase.ts  cliente do banco (opcional)
+    banco.ts     conversa com /api/loreta (opcional)
     nuvem.ts     o que mudou -> o que mandar pro banco, e a fila de envio
     tela.ts      mede a área visível de verdade (teclado, barras do navegador)
   components/    splash, bonequinha, sheet, campos, ícones
   screens/       Início, Vendas, Custos, Caixa, Ajustes
   styles/        sistema visual da marca
 public/          bonequinha, logo e ícones extraídos do cardápio
-supabase/
-  schema.sql     tabelas, permissões e tempo real
+api/
+  loreta.ts      função da Vercel que lê e grava no banco (Neon)
+banco/
+  schema.sql     tabelas do banco
 ```

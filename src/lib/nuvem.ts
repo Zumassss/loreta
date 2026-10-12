@@ -1,5 +1,5 @@
 /**
- * Sincronização com o banco (Supabase).
+ * Sincronização com o banco (Neon, pela função /api/loreta).
  *
  * A ideia: a tela continua trabalhando com um único objeto `DB`, igual antes.
  * Aqui a gente compara o antes/depois desse objeto e manda pro banco só o que
@@ -18,7 +18,7 @@ import type {
   Unidade,
   Venda,
 } from "./types";
-import { supabase } from "./supabase";
+import { chamarBanco } from "./banco";
 
 type Linha = Record<string, unknown>;
 const n = (v: unknown) => (v === null || v === undefined ? 0 : Number(v));
@@ -261,38 +261,22 @@ export function operacoesDeTudo(db: DB): Operacao[] {
    --------------------------------------------------------------- */
 
 export async function aplicar(op: Operacao): Promise<void> {
-  if (!supabase) throw new Error("sem nuvem");
-  if (op.tipo === "delete") {
-    const { error } = await supabase
-      .from(op.tabela)
-      .delete()
-      .in("id", op.ids ?? []);
-    if (error) throw error;
-    return;
-  }
-  const { error } = await supabase.from(op.tabela).upsert(op.linhas ?? []);
-  if (error) throw error;
+  await chamarBanco("POST", op);
 }
 
+type Resposta = Record<NomeColecao, Linha[] | null> & {
+  config: Linha | null;
+};
+
 export async function baixarTudo(base: DB): Promise<DB> {
-  const sb = supabase;
-  if (!sb) throw new Error("sem nuvem");
+  const resp = await chamarBanco<Resposta>("GET");
   const nomes = Object.keys(COLECOES) as NomeColecao[];
-  const respostas = await Promise.all([
-    ...nomes.map((nome) => sb.from(COLECOES[nome].tabela).select("*")),
-    sb.from("config").select("*").eq("id", 1).maybeSingle(),
-  ]);
-
-  const erro = respostas.find((r) => r.error);
-  if (erro?.error) throw erro.error;
-
   const novo: DB = { ...base };
-  nomes.forEach((nome, i) => {
-    const linhas = (respostas[i].data as Linha[]) ?? [];
+  nomes.forEach((nome) => {
+    const linhas = resp[nome] ?? [];
     Object.assign(novo, { [nome]: linhas.map(generica(nome).daLinha) });
   });
-  const linhaConfig = respostas[nomes.length].data as Linha | null;
-  novo.config = linhaConfig ? configDaLinha(linhaConfig) : base.config;
+  novo.config = resp.config ? configDaLinha(resp.config) : base.config;
   return novo;
 }
 

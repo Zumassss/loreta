@@ -1,7 +1,11 @@
 -- ============================================================
--- Loreta · Caixa — banco de dados
--- Cole tudo isto no SQL Editor do Supabase e clique em RUN.
+-- Loreta · Caixa — banco de dados (Postgres / Neon)
+-- Cole tudo isto no SQL Editor do Neon e clique em RUN.
 -- Pode rodar de novo sem medo: nada é apagado.
+--
+-- Quem lê e grava é só a função api/loreta.ts (no servidor da Vercel), com a
+-- URL do banco que a integração da Vercel criou. O navegador nunca recebe
+-- essa URL, então aqui não há regras por papel como havia no Supabase.
 -- ============================================================
 
 create table if not exists public.pontos (
@@ -76,52 +80,3 @@ create table if not exists public.config (
 create index if not exists vendas_data_idx    on public.vendas (data);
 create index if not exists despesas_data_idx  on public.despesas (data);
 create index if not exists retiradas_data_idx on public.retiradas (data);
-
--- ============================================================
--- Quem pode mexer: qualquer um que abra o site da Loreta (papel "anon",
--- a chave pública que vai no navegador) e também quem entre com senha,
--- caso a senha seja religada com LORETA_SENHA=1 na Vercel.
---
--- Isso é de propósito: a Julia pediu pra entrar sem senha. Quem tiver o
--- link consegue ver e alterar o caixa. Pra fechar de novo, troque
--- "to anon, authenticated" por "to authenticated" aqui embaixo, rode
--- este arquivo e publique com LORETA_SENHA=1.
--- ============================================================
-
-do $$
-declare
-  t text;
-begin
-  foreach t in array array[
-    'pontos','sabores','ingredientes','vendas','despesas','retiradas','config'
-  ] loop
-    execute format('alter table public.%I enable row level security', t);
-    execute format('drop policy if exists "loreta_leitura" on public.%I', t);
-    execute format('drop policy if exists "loreta_escrita" on public.%I', t);
-    execute format(
-      'create policy "loreta_leitura" on public.%I for select to anon, authenticated using (true)', t
-    );
-    execute format(
-      'create policy "loreta_escrita" on public.%I for all to anon, authenticated using (true) with check (true)', t
-    );
-  end loop;
-end $$;
-
--- ============================================================
--- Tempo real: uma venda lançada num celular aparece no outro na hora.
--- ============================================================
-
-do $$
-declare
-  t text;
-begin
-  foreach t in array array[
-    'pontos','sabores','ingredientes','vendas','despesas','retiradas','config'
-  ] loop
-    begin
-      execute format('alter publication supabase_realtime add table public.%I', t);
-    exception
-      when duplicate_object then null;
-    end;
-  end loop;
-end $$;

@@ -414,8 +414,8 @@ export default function Ajustes({ avisar }: { avisar: (t: string) => void }) {
                   </div>
                   <p className="muted" style={{ margin: "8px 0 0" }}>
                     O banco ainda não foi ligado, então os lançamentos ficam
-                    guardados só neste celular. Assim que as chaves do Supabase
-                    entrarem no site, todo mundo passa a ver o mesmo caixa.
+                    guardados só neste celular. Assim que o banco for ligado na
+                    Vercel, todo mundo passa a ver o mesmo caixa.
                   </p>
                 </>
               )}

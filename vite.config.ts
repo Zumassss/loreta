@@ -2,38 +2,13 @@ import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
 
 /**
- * A Vercel, quando a gente liga o Supabase pelo painel de Storage, cria as
- * variáveis sozinha — mas com os nomes dela (SUPABASE_URL, NEXT_PUBLIC_...).
- * O Vite só entrega pro navegador o que começa com VITE_, então aqui a gente
- * aceita qualquer um desses nomes e injeta no app na hora do build.
- *
- * De propósito só a URL e a chave pública (anon) entram. A service_role NUNCA
- * é injetada: ela ignora as regras de segurança do banco e não pode aparecer
- * no código que vai pro navegador.
+ * O banco (Neon) foi ligado pelo painel da Vercel, que cria as variáveis com o
+ * prefixo do nome do banco (bancoloreta_DATABASE_URL). Quem usa essa URL é só
+ * a função api/loreta.ts, no servidor. Pro navegador vai apenas um "sim/não":
+ * existe banco? existe senha da casa? Nenhum valor secreto entra no site.
  */
-const primeiro = (fontes: Record<string, string>, nomes: string[]) => {
-  for (const nome of nomes) {
-    const valor = fontes[nome];
-    if (valor && valor.trim()) return valor.trim();
-  }
-  return "";
-};
-
-/** a chave service_role passa por cima de toda a segurança do banco — se ela
-    aparecer por engano no lugar da anon, o build recusa em vez de publicar */
-const ehServiceRole = (chave: string) => {
-  try {
-    const meio = chave.split(".")[1];
-    if (!meio) return false;
-    const texto = Buffer.from(
-      meio.replace(/-/g, "+").replace(/_/g, "/"),
-      "base64",
-    ).toString("utf8");
-    return JSON.parse(texto).role === "service_role";
-  } catch {
-    return false;
-  }
-};
+const tem = (fontes: Record<string, string>, nomes: string[]) =>
+  nomes.some((nome) => Boolean(fontes[nome]?.trim()));
 
 export default defineConfig(({ mode }) => {
   const ambiente = {
@@ -41,47 +16,21 @@ export default defineConfig(({ mode }) => {
     ...process.env,
   } as Record<string, string>;
 
-  const url = primeiro(ambiente, [
-    "VITE_SUPABASE_URL",
-    "SUPABASE_URL",
-    "NEXT_PUBLIC_SUPABASE_URL",
-    "SUPABASE_NEXT_PUBLIC_SUPABASE_URL",
+  const nuvem = tem(ambiente, [
+    "bancoloreta_DATABASE_URL",
+    "LORETA_DATABASE_URL",
+    "DATABASE_URL",
   ]);
 
-  const chave = primeiro(ambiente, [
-    "VITE_SUPABASE_ANON_KEY",
-    "SUPABASE_ANON_KEY",
-    "NEXT_PUBLIC_SUPABASE_ANON_KEY",
-    "SUPABASE_NEXT_PUBLIC_SUPABASE_ANON_KEY",
-    "VITE_SUPABASE_PUBLISHABLE_KEY",
-    "SUPABASE_PUBLISHABLE_KEY",
-    "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
-  ]);
+  // Por padrão o site abre direto, sem pedir senha. Para exigir senha, crie a
+  // variável LORETA_SENHA_DA_CASA (com a senha) na Vercel e publique de novo.
+  const exigeSenha = tem(ambiente, ["LORETA_SENHA_DA_CASA"]);
 
-  const email =
-    primeiro(ambiente, ["VITE_LORETA_EMAIL", "LORETA_EMAIL"]) ||
-    "caixa@loreta.app";
-
-  // Por padrão o site abre direto, sem pedir senha. Para voltar a exigir senha,
-  // crie a variável LORETA_SENHA=1 na Vercel e publique de novo.
-  const exigeSenha = ["1", "true", "sim"].includes(
-    primeiro(ambiente, ["VITE_LORETA_SENHA", "LORETA_SENHA"]).toLowerCase(),
-  );
-
-  if (chave && ehServiceRole(chave)) {
-    throw new Error(
-      "[Loreta] a chave informada é a service_role, que abre o banco inteiro e não pode " +
-        'ir pro navegador. Use a chave "anon public" do Supabase.',
-    );
-  }
-
-  // aparece no log do deploy pra ficar fácil conferir se as chaves chegaram
+  // aparece no log do deploy pra ficar fácil conferir se o banco chegou
   console.log(
-    url && chave
-      ? `[Loreta] banco ligado em ${url.replace(/^https?:\/\//, "")} · ${
-          exigeSenha
-            ? `entrada com senha (${email})`
-            : "entrada liberada, sem senha"
+    nuvem
+      ? `[Loreta] banco ligado (Neon) · ${
+          exigeSenha ? "entrada com a senha da casa" : "entrada liberada, sem senha"
         }`
       : "[Loreta] sem banco: o app vai guardar os dados só no aparelho de quem usar",
   );
@@ -90,9 +39,7 @@ export default defineConfig(({ mode }) => {
     plugins: [react()],
     base: "./",
     define: {
-      __LORETA_URL__: JSON.stringify(url),
-      __LORETA_CHAVE__: JSON.stringify(chave),
-      __LORETA_EMAIL__: JSON.stringify(email),
+      __LORETA_NUVEM__: JSON.stringify(nuvem),
       __LORETA_EXIGE_SENHA__: JSON.stringify(exigeSenha),
     },
   };
